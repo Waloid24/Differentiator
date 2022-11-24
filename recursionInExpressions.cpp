@@ -8,6 +8,7 @@ int getT (void);
 int getBracket (void);
 int getNumber (void);
 void removeSpaces (char * dest, const char * source);
+int getDegree (void);
 
 const char * s = nullptr;
 
@@ -77,12 +78,12 @@ int getExpression (void)
 
 int getT (void)
 {
-    int val = getBracket ();
+    int val = getDegree ();
     while (*s == '*' || *s == '/')
     {
         char op = *s;
         s++;
-        int val2 = getBracket (); //getT
+        int val2 = getDegree (); //getT
 
         if (op == '*')
         {
@@ -93,6 +94,28 @@ int getT (void)
             val /= val2;
         }
     }
+    return val;
+}
+
+int getDegree (void)
+{
+    int val = getBracket();
+    printf ("in getDegree: val = %d\n", val);
+    while (*s == '^')
+    {
+        char op = *s;
+        s++;
+        int val2 = getBracket();
+        int startingValue = val;
+        printf ("in getDegree: val2 = %d\n", val2);
+
+        for (int i = 1; i < val2; i++)
+        {
+            val *= startingValue;
+            printf ("val = %d\n", val);
+        }
+    }
+    printf ("in getDegree after while: %d\n", val);
     return val;
 }
 
@@ -130,9 +153,4 @@ int getNumber (void)
     return val;
 }
 
-// int getDegree (void)
-// {
-//     int val = 0;
-//
-//
-// }
+

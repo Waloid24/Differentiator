@@ -2,6 +2,8 @@
 
 static unsigned int	NUMBER_GRAPHICAL_TREE_DUMPS = 0;
 
+//-------------------------------------------------------------building a tree-------------------------------------------------------
+
 node_t * createNodeWithNum (elem_t num)
 {
 	node_t * node = (node_t *) calloc (1, sizeof(node_t));
@@ -39,7 +41,7 @@ node_t * createNodeWithOperation (enum operationType operation, node_t * valLeft
 	return node;
 }
 
-node_t * createNodeWithVariable (const char variableName)
+node_t * createNodeWithVariable (char variableName)
 {
 	node_t * node = (node_t *) calloc (1, sizeof(node_t));
 	MY_ASSERT (node == nullptr, "Unable to allocate new memory");
@@ -49,6 +51,56 @@ node_t * createNodeWithVariable (const char variableName)
 
 	return node;
 }
+
+node_t * createNodeWithFunction (char * nameFunction)
+{
+	if (myStrcmp ((const char *) nameFunction, "sin") == 0)
+	{
+		node_t * node = (node_t *) calloc (1, sizeof(node_t));
+		MY_ASSERT (node == nullptr, "Unable to allocate new memory");
+
+		node->type = FUNC_T;
+		node->nameFunc = (char *) "sin";
+		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
+		return node;
+	}
+	else if (myStrcmp ((const char *) nameFunction, "cos") == 0)
+	{
+		node_t * node = (node_t *) calloc (1, sizeof(node_t));
+		MY_ASSERT (node == nullptr, "Unable to allocate new memory");
+
+		node->type = FUNC_T;
+		node->nameFunc = (char *) "cos";
+		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
+		return node;
+	}
+	else if (myStrcmp ((const char *) nameFunction, "tg") == 0)
+	{
+		node_t * node = (node_t *) calloc (1, sizeof(node_t));
+		MY_ASSERT (node == nullptr, "Unable to allocate new memory");
+
+		node->type = FUNC_T;
+		node->nameFunc = (char *) "tg";
+		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
+		return node;
+	}
+	else if (myStrcmp ((const char *) nameFunction, "ctg") == 0)
+	{
+		node_t * node = (node_t *) calloc (1, sizeof(node_t));
+		MY_ASSERT (node == nullptr, "Unable to allocate new memory");
+
+		node->type = FUNC_T;
+		node->nameFunc = (char *) "ctg";
+		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
+		return node;
+	}
+	else
+	{
+		printf ("Incorrect function name\n");
+		return nullptr;
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------graphical tree dump-------------------------------------------------
 
@@ -95,17 +147,21 @@ void writeNodeToDotFile (const node_t * node, FILE * graphicDump)
 	MY_ASSERT (node == nullptr, "There is no access to the node");
 	MY_ASSERT (graphicDump == nullptr, "There is no access to the file for dump");
 
-	if (node->type == NUM_T)
-	{
-		dumplineTree ("\t node%p [label=\"{ %lf | %p }\"];\n", node, node->elem, node); //| [style = filled, color = black, fillcolor = orange]
-	}
-	else if (node->type == OPER_T)
+	if (node->type == OPER_T)
 	{
 		dumplineTree ("\t node%p [label=\"{ %c | %p }\"];\n", node, node->op_t, node);
 	}
-	else
+	else if (node->type == VAR_T)
 	{
 		dumplineTree ("\t node%p [label=\"{ %c | %p }\"];\n", node, node->varName, node);
+	}
+	else if (node->type == NUM_T)
+	{
+		dumplineTree ("\t node%p [label=\"{ %lf | %p }\"];\n", node, node->elem, node); //| [style = filled, color = black, fillcolor = orange]
+	}
+	else
+	{
+		dumplineTree ("\t node%p [label=\"{ %s | %p }\"];\n", node, node->nameFunc, node);
 	}
 
 	if (node->left != nullptr)
@@ -163,6 +219,29 @@ static void createHtmlFileTree(const char * nameFileDump, unsigned int * timesCr
     fclose (treeHTML);
 }
 
-//----------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------
 
+//-------------------------------------------------------support functions---------------------------------------------------------
+int myStrcmp (const char * string1, const char * string2)
+{
+	int i = 0, j = 0;
+	for (; string1[i] != '\0' && string2[j] != '\0'; i++, j++)
+	{
+		while (!isalpha(string1[i]) && string1[i] != '\0')
+			i++;
+		while (!isalpha(string2[j]) && string2[j] != '\0')
+			j++;
+		if (tolower(string1[i]) == tolower(string2[j]))
+			continue;
+		return (tolower(string1[i]) - tolower(string2[j]));
+	}
 
+	while (!isalpha(string1[i]) && string1[i] != '\0')
+			i++;
+
+	while (!isalpha(string2[j]) && string2[j] != '\0')
+			j++;
+
+	return (tolower(string1[i]) - tolower(string2[j]));
+}
+//---------------------------------------------------------------------------------------------------------------------------------

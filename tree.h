@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "my_assert.h"
 
 #define dumplineTree(text, ...)\
@@ -11,7 +12,8 @@
 enum nodeType {
     OPER_T,
     VAR_T,
-    NUM_T
+    NUM_T,
+    FUNC_T
 };
 
 enum operationType {
@@ -34,6 +36,7 @@ struct nodeTree {
     struct nodeTree * parent;
     elem_t elem;
     char varName;
+    char * nameFunc;
     struct nodeTree * left;
     struct nodeTree * right;
 
@@ -46,7 +49,8 @@ typedef struct nodeTree node_t;
 //-----------------------------------------------create nodes----------------------------------------------------
 node_t * createNodeWithNum (elem_t num);
 node_t * createNodeWithOperation (enum operationType operation, node_t * valLeftNode, node_t * valRightNode);
-node_t * createNodeWithVariable (const char variableName);
+node_t * createNodeWithVariable (char variableName);
+node_t * createNodeWithFunction (char * nameFunction);
 //---------------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------graphical tree dump-------------------------------------------------
@@ -58,6 +62,9 @@ void createDotFileTree (const char * nameDotFile, unsigned int timesCreatePictur
 static void createHtmlFileTree(const char * nameFileDump, unsigned int * timesCreatePicture);
 //----------------------------------------------------------------------------------------------------------------
 
+//-------------------------------------------------------support functions---------------------------------------------------------
+int myStrcmp (const char * string1, const char * string2);
+//---------------------------------------------------------------------------------------------------------------------------------
 
 
 #endif

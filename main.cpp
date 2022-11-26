@@ -17,17 +17,7 @@ int main (void)
 
     node_t * firstNode = getGrammar (strFixed);
 
-    printf ("firstNode = %c, %p\n", firstNode->op_t, firstNode);
-    if (firstNode->left == firstNode->right)
-    {
-        printf ("firstNode->left->elem = %lf\n", firstNode->left->elem);
-    }
-    else
-    {
-        printf ("firstNode->left->elem = %lf, %p\n", firstNode->left->elem, &firstNode->left);
-        printf ("firstNode->right->elem = %lf, %p\n", firstNode->right->elem, &firstNode->right);
-    }
-
-    // textDump (firstNode, logFile, NO_LAST, 0);
     graphicDumpTree (firstNode);
+
+
 }

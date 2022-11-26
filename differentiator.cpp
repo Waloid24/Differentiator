@@ -1,5 +1,6 @@
 #include "differentiator.h"
 
+//-------------------------------------------------------------building a tree-------------------------------------------------------
 const char * s = nullptr;
 
 void removeSpaces (char * dest, const char * source)
@@ -27,7 +28,7 @@ node_t * getGrammar (const char * str)
     node_t * firstNode = getExpression();
     if (*s == '\0')
     {
-        printf ("ERROR\n");
+        printf ("Fucking hands, they didn't write the expression again\n");
         return firstNode;
     }
     return firstNode;
@@ -113,18 +114,48 @@ node_t * getBracket (void)
 
 node_t * getNumber (void)
 {
-    int val = 0;
-    const char * sOld = s;
-    while ('0' <= *s && *s <= '9')
+    if (isalpha(*s))
     {
-        val = val*10 + *s - '0';
-        s++;
-    }
-    assert (s != sOld);
-    return (createNodeWithNum (val));
-}
+        char buf[10] = "";
+        sscanf (s, "%[A-z]", buf);
+        int wordLength = numOfLetters (buf);
 
-//---------------------------------------------dump to console--------------------------------------------------
+        MY_ASSERT (wordLength == 0, "Failed line reading");
+        s = s+wordLength;
+        printf ("after read func *s = %c\n", *s);
+        if (wordLength == 1)
+        {
+            return (createNodeWithVariable (buf[0]));
+        }
+        else
+        {
+            node_t * function = createNodeWithFunction (buf);
+            node_t * followingExpression = getBracket ();
+            function->right = nullptr;
+            function->left = followingExpression;
+            followingExpression->parent = function;
+
+            return (function);
+        }
+    }
+    else
+    {
+        int val = 0;
+        const char * sOld = s;
+        while ('0' <= *s && *s <= '9')
+        {
+            val = val*10 + *s - '0';
+            s++;
+        }
+        assert (s != sOld);
+        return (createNodeWithNum (val));
+    }
+}
+//----------------------------------------------------------------------------------------------------------------------------------
+
+
+//---------------------------------------------dump to console----------------------------------------------------------------------
+
 void textDump (node_t * node, FILE * log, unsigned int isLast, unsigned int numTABs)
 {
  	MY_ASSERT (node == nullptr, "There is no access to the node of the tree");
@@ -165,4 +196,68 @@ void printfTab (unsigned int numTABs, FILE * log)
 		fprintf (log, "  ");
 	}
 }
-//-----------------------------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------------------------------------------------
+
+//-------------------------------------------------------support functions---------------------------------------------------------
+int numOfLetters (const char * string)
+{
+    MY_ASSERT (string == nullptr, "There is no access to string");
+
+    int number = 0;
+
+    while (*string != '\0')
+    {
+        number++;
+        string++;
+    }
+    return number;
+}
+//---------------------------------------------------------------------------------------------------------------------------------
+
+//--------------------------------------------creating a tree after differentiation------------------------------------------------
+node_t * getGrammarForDif (node_t * node) //возможно, когда сделаешь двойной указатель, потом начнешь вылезать за строку из-за сдвига
+{
+    MY_ASSERT (node == nullptr, "There is no access to the node");
+
+    node_t * firstNode = getExpressionForDif(node);
+
+    return firstNode;
+}
+
+// node_t * getExpressionForDif (node_t * node)
+// {
+//
+//     while (*s == '+' || *s == '-')
+//     {
+//         // node_t * rightNode = getDivOrMulforDif (node);
+//
+//         if (op == '+')
+//         {
+//             createNodeWithOperation (OP_ADD, leftNode, rightNode);
+//         }
+//         else
+//         {
+//             leftNode = createNodeWithOperation (OP_SUB, leftNode, rightNode);
+//         }
+//
+//     }
+//     return leftNode;
+// }
+
+node_t * difNumberOrVar (node_t * node)
+{
+    {
+        int val = 0;
+        const char * sOld = s;
+        while ('0' <= *s && *s <= '9')
+        {
+            val = val*10 + *s - '0';
+            s++;
+        }
+        assert (s != sOld);
+        return (createNodeWithNum (val));
+    }
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------

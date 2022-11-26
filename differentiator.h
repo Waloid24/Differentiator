@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <ctype.h>
 #include "tree.h"
 
 enum IS_LAST {
@@ -39,6 +40,10 @@ node_t * getNumber (void);
 void textDump (node_t * node, FILE * log, unsigned int isLast, unsigned int numTABs);
 void printfTab (unsigned int numTABs, FILE * log);
 //--------------------------------------------------------------------------------------------------------------
+
+//-------------------------------------------------------support functions---------------------------------------------------------
+int numOfLetters (const char * string);
+//---------------------------------------------------------------------------------------------------------------------------------
 
 
 #endif

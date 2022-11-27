@@ -49,8 +49,8 @@ int numOfLetters (const char * string);
 node_t * getGrammarForDif (node_t * node); //возможно, когда сделаешь двойной указатель, потом начнешь вылезать за строку из-за сдвига
 node_t * getExpressionForDif (node_t * node);
 node_t * difMulDiv (node_t * node);
+node_t * difDegree (node_t * node);
 node_t * difNumberOrVar (node_t * node);
-
 //----------------------------------------------------------------------------------------------------------------------------------
 
 #endif

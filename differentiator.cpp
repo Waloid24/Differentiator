@@ -247,50 +247,84 @@ node_t * difMulDiv (node_t * node)
 
     while (node->op_t == OP_MUL)
     {
+        node_t * copyRightNode = copyNode (node->right);
+        node_t * copyLeftNode = copyNode (node->left);
+
         node_t * firstNode = createNodeWithOperation (OP_MUL, node->left, node->right);
         node_t * difLeftNodeForMul = getExpressionForDif (node->left);
         firstNode->left = difLeftNodeForMul;
-        firstNode->right = node->right;
+        firstNode->right = copyRightNode;
         difLeftNodeForMul->parent = firstNode;
-        node->right->parent = firstNode;
+        copyRightNode->parent = firstNode;
 
         node_t * secondNode = createNodeWithOperation (OP_MUL, node->left, node->right);
         node_t * difRightNodeForMul = getExpressionForDif (node->right);
-        secondNode->left = node->left;
+        secondNode->left = copyLeftNode;
         secondNode->right = difRightNodeForMul;
         difRightNodeForMul->parent = secondNode;
-        node->left->parent = secondNode;
+        copyLeftNode->parent = secondNode;
 
         node_t * headNodeForMul = createNodeWithOperation (OP_ADD, firstNode, secondNode);
         return headNodeForMul;
     }
     while (node->op_t == OP_DIV)
     {
-        node_t * firstNode = createNodeWithOperation (OP_MUL, node->left, node->right);
+        graphicDumpTree (node->right);
+        node_t * copyRightNode = copyNode (node->right);
+        graphicDumpTree (copyRightNode);
+        node_t * copyLeftNode = copyNode (node->left);
+
+        node_t * firstNode = createNodeWithOperation (OP_MUL, copyLeftNode, copyRightNode); //? (OP_MUL, node->left, node->right)
         node_t * difLeftNodeForMul = getExpressionForDif (node->left);
         firstNode->left = difLeftNodeForMul;
-        firstNode->right = node->right;
+        firstNode->right = copyRightNode;
         difLeftNodeForMul->parent = firstNode;
-        node->right->parent = firstNode;
+        copyRightNode->parent = firstNode;
 
-        node_t * secondNode = createNodeWithOperation (OP_MUL, node->left, node->right);
+        node_t * secondNode = createNodeWithOperation (OP_MUL, node->left, node->right); //(OP_MUL, node->left, node->right)
         node_t * difRightNodeForMul = getExpressionForDif (node->right);
-        secondNode->left = node->left;
+        secondNode->left = copyLeftNode;
         secondNode->right = difRightNodeForMul;
         difRightNodeForMul->parent = secondNode;
-        node->left->parent = secondNode;
+        copyLeftNode->parent = secondNode;
 
         node_t * headNodeForNumerator = createNodeWithOperation (OP_SUB, firstNode, secondNode);
 
+        graphicDumpTree (headNodeForNumerator);
+
         node_t * degreeOfDenominator = createNodeWithNum (2);
-        node_t * copiedRightNode = copyNode (node->right);
+        node_t * copiedRightNode = copyNode (copyRightNode); //node->right
         node_t * headNodeForDenominator = createNodeWithOperation (OP_DEG, copiedRightNode, degreeOfDenominator);
 
         node_t * headNodeForDiv = createNodeWithOperation (OP_DIV, headNodeForNumerator, headNodeForDenominator);
+
         return headNodeForDiv;
+    }
+    return (difDegree(node));
+}
+
+node_t * difDegree (node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to the node");
+
+    while (node->op_t == OP_DEG)
+    {
+        node_t * copyRightNodeForExpression = copyNode (node->right);
+        node_t * copyRightNodeForDegree = copyNode (node->right);
+        node_t * copyLeftNode = copyNode (node->left);
+
+        node_t * numForDegreeIndicator = createNodeWithNum (1);
+
+        node_t * newDegreeIndicator = createNodeWithOperation (OP_SUB, copyRightNodeForDegree, numForDegreeIndicator);
+        node_t * newDegree = createNodeWithOperation (OP_DEG, copyLeftNode, newDegreeIndicator);
+        node_t * headNodeForDeg = createNodeWithOperation (OP_MUL, copyRightNodeForExpression, newDegree);
+
+        return headNodeForDeg;
     }
     return (difNumberOrVar(node));
 }
+
+
 node_t * difNumberOrVar (node_t * node)
 {
     MY_ASSERT (node == nullptr, "There is no access to the node");
@@ -308,11 +342,6 @@ node_t * difNumberOrVar (node_t * node)
     }
 }
 
-// node_t * difAddOrSubNode (node_t * node)
-// {
-//     MY_ASSERT (node == nullptr, "There is no access to the node");
-//
-//     node
-// }
+
 
 //---------------------------------------------------------------------------------------------------------------------------------

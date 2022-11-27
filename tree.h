@@ -51,6 +51,7 @@ node_t * createNodeWithNum (elem_t num);
 node_t * createNodeWithOperation (enum operationType operation, node_t * valLeftNode, node_t * valRightNode);
 node_t * createNodeWithVariable (char variableName);
 node_t * createNodeWithFunction (char * nameFunction);
+node_t * copyNode (node_t * nodeForCopy);
 //---------------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------graphical tree dump-------------------------------------------------

@@ -100,6 +100,18 @@ node_t * createNodeWithFunction (char * nameFunction)
 		return nullptr;
 	}
 }
+
+node_t * copyNode (node_t * nodeForCopy)
+{
+	MY_ASSERT (nodeForCopy == nullptr, "There is no access to node");
+
+	node_t * newNode = (node_t *) calloc (1, sizeof (node_t));
+	MY_ASSERT (newNode == nullptr, "Unable to allocate new memory");
+
+	*newNode = *nodeForCopy;
+
+	return newNode;
+}
 //----------------------------------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------graphical tree dump-------------------------------------------------

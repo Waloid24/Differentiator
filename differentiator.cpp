@@ -225,39 +225,94 @@ node_t * getGrammarForDif (node_t * node) //возможно, когда сде�
     return firstNode;
 }
 
-// node_t * getExpressionForDif (node_t * node)
-// {
-//
-//     while (*s == '+' || *s == '-')
-//     {
-//         // node_t * rightNode = getDivOrMulforDif (node);
-//
-//         if (op == '+')
-//         {
-//             createNodeWithOperation (OP_ADD, leftNode, rightNode);
-//         }
-//         else
-//         {
-//             leftNode = createNodeWithOperation (OP_SUB, leftNode, rightNode);
-//         }
-//
-//     }
-//     return leftNode;
-// }
+node_t * getExpressionForDif (node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to the node");
+    while (node->op_t == OP_ADD || node->op_t == OP_SUB)
+    {
+        node_t * leftNode = getExpressionForDif (node->left);
+        node_t * rightNode = getExpressionForDif (node->right);
+        node->left = leftNode;
+        node->right = rightNode;
+        leftNode->parent = node;
+        rightNode->parent = node;
+        return node;
 
+    }
+    return (difMulDiv (node));
+}
+node_t * difMulDiv (node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to the node");
+
+    while (node->op_t == OP_MUL)
+    {
+        node_t * firstNode = createNodeWithOperation (OP_MUL, node->left, node->right);
+        node_t * difLeftNodeForMul = getExpressionForDif (node->left);
+        firstNode->left = difLeftNodeForMul;
+        firstNode->right = node->right;
+        difLeftNodeForMul->parent = firstNode;
+        node->right->parent = firstNode;
+
+        node_t * secondNode = createNodeWithOperation (OP_MUL, node->left, node->right);
+        node_t * difRightNodeForMul = getExpressionForDif (node->right);
+        secondNode->left = node->left;
+        secondNode->right = difRightNodeForMul;
+        difRightNodeForMul->parent = secondNode;
+        node->left->parent = secondNode;
+
+        node_t * headNodeForMul = createNodeWithOperation (OP_ADD, firstNode, secondNode);
+        return headNodeForMul;
+    }
+    while (node->op_t == OP_DIV)
+    {
+        node_t * firstNode = createNodeWithOperation (OP_MUL, node->left, node->right);
+        node_t * difLeftNodeForMul = getExpressionForDif (node->left);
+        firstNode->left = difLeftNodeForMul;
+        firstNode->right = node->right;
+        difLeftNodeForMul->parent = firstNode;
+        node->right->parent = firstNode;
+
+        node_t * secondNode = createNodeWithOperation (OP_MUL, node->left, node->right);
+        node_t * difRightNodeForMul = getExpressionForDif (node->right);
+        secondNode->left = node->left;
+        secondNode->right = difRightNodeForMul;
+        difRightNodeForMul->parent = secondNode;
+        node->left->parent = secondNode;
+
+        node_t * headNodeForNumerator = createNodeWithOperation (OP_SUB, firstNode, secondNode);
+
+        node_t * degreeOfDenominator = createNodeWithNum (2);
+        node_t * copiedRightNode = copyNode (node->right);
+        node_t * headNodeForDenominator = createNodeWithOperation (OP_DEG, copiedRightNode, degreeOfDenominator);
+
+        node_t * headNodeForDiv = createNodeWithOperation (OP_DIV, headNodeForNumerator, headNodeForDenominator);
+        return headNodeForDiv;
+    }
+    return (difNumberOrVar(node));
+}
 node_t * difNumberOrVar (node_t * node)
 {
+    MY_ASSERT (node == nullptr, "There is no access to the node");
+    if (node->type == NUM_T)
     {
-        int val = 0;
-        const char * sOld = s;
-        while ('0' <= *s && *s <= '9')
-        {
-            val = val*10 + *s - '0';
-            s++;
-        }
-        assert (s != sOld);
-        return (createNodeWithNum (val));
+        return (createNodeWithNum(0));
+    }
+    else if (node->type == VAR_T)
+    {
+        return (createNodeWithNum(1));
+    }
+    else
+    {
+        return node;
     }
 }
+
+// node_t * difAddOrSubNode (node_t * node)
+// {
+//     MY_ASSERT (node == nullptr, "There is no access to the node");
+//
+//     node
+// }
 
 //---------------------------------------------------------------------------------------------------------------------------------

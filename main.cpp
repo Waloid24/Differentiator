@@ -19,5 +19,7 @@ int main (void)
 
     graphicDumpTree (firstNode);
 
+    node_t * difNode = getGrammarForDif (firstNode);
 
+    graphicDumpTree (difNode);
 }

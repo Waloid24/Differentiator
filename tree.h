@@ -10,19 +10,20 @@
 		fprintf (graphicDump, text, ##__VA_ARGS__)
 
 enum nodeType {
-    OPER_T,
-    VAR_T,
-    NUM_T,
-    FUNC_T,
-    CONST_T
+    OPER_T          = 1,
+    VAR_T           = 2,
+    NUM_T           = 3,
+    FUNC_T          = 4,
+    CONST_T         = 5
 };
 
 enum operationType {
-    OP_ADD = '+',
-    OP_SUB = '-',
-    OP_MUL = '*',
-    OP_DIV = '/',
-    OP_DEG = '^'
+    WITHOUT_OP      = 0,
+    OP_ADD          = '+',
+    OP_SUB          = '-',
+    OP_MUL          = '*',
+    OP_DIV          = '/',
+    OP_DEG          = '^'
 };
 
 enum createNode {

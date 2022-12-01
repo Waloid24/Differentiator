@@ -29,7 +29,7 @@ enum op_t {
 
 //--------------------------------------------operations with a tree--------------------------------------------
 void removeSpaces (char * dest, const char * source);
-node_t * getGrammar (const char * str);
+node_t * getGrammar ();
 node_t * getExpression (void);
 node_t * getT (void);
 node_t * getDegree (void);
@@ -48,17 +48,22 @@ int numOfLetters (const char * string);
 //---------------------------------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------creating a tree after differentiation------------------------------------------------
+void simplifyExpression (node_t ** node);
 node_t * getGrammarForDif (node_t * node); //возможно, когда сделаешь двойной указатель, потом начнешь вылезать за строку из-за сдвига
 node_t * getExpressionForDif (node_t * node);
 node_t * difMulDiv (node_t * node);
 node_t * difDegree (node_t * node);
 node_t * difNumberOrVar (node_t * node);
+node_t * difFunc (node_t * node);
 //----------------------------------------------------------------------------------------------------------------------------------
 
-//-------------------------------------------------------support functions---------------------------------------------------------
-void simplifyExpToOne (node_t * node);
+//-------------------------------------------------------------simplify-------------------------------------------------------------
+void simplifyDegOrDivToOne (node_t ** node);
+void simplifyMulByZero (node_t * node);
+void simplifyMulByOne (node_t ** node);
+void simplifyAddWithZero (node_t ** node);
 int compareFractionalNum (double firstNum, double secondNum);
-
+void removeConstants (node_t ** node);
 //---------------------------------------------------------------------------------------------------------------------------------
 
 

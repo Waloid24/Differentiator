@@ -14,8 +14,8 @@ static const int DEBUG_SOFT = 0;
 	#define MY_ASSERT(instruction, message) \
 	if (instruction)\
 	{\
-		printf ("\v " #message "\n\n");\
-		printf ("An error occurred in the file: %s \n\n"\
+		fprintf (stderr, "\v " #message "\n\n");\
+		fprintf (stderr, "An error occurred in the file: %s \n\n"\
 				"In line:                       %d \n\n"\
 				"In function:                   %s \n\n",\
 				__FILE__, __LINE__, __PRETTY_FUNCTION__);\

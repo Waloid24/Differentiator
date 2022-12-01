@@ -12,8 +12,6 @@ node_t * createNodeWithNum (elem_t num)
 	node->type = NUM_T;
 	node->elem = num;
 
-	printf ("in createNodeWithNum: node->elem = %.2lf\n", node->elem);
-
 	return node;
 }
 
@@ -35,8 +33,6 @@ node_t * createNodeWithOperation (enum operationType operation, node_t * valLeft
 	node->right = valRightNode;
 	node->type = OPER_T;
 	node->op_t = operation;
-
-	printf ("in createNodeWithOperation: node->op_t = %c\n", node->op_t);
 
 	return node;
 }
@@ -111,7 +107,7 @@ node_t * createNodeWithFunction (char * nameFunction)
 		MY_ASSERT (node == nullptr, "Unable to allocate new memory");
 
 		node->type = FUNC_T;
-		node->nameFunc = (char *) "log";
+		node->nameFunc = (char *) "ln";
 		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
 		return node;
 	}

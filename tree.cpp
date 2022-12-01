@@ -68,7 +68,6 @@ node_t * createNodeWithFunction (char * nameFunction)
 
 		node->type = FUNC_T;
 		node->nameFunc = (char *) "sin";
-		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
 		return node;
 	}
 	else if (myStrcmp ((const char *) nameFunction, "cos") == 0)
@@ -78,7 +77,6 @@ node_t * createNodeWithFunction (char * nameFunction)
 
 		node->type = FUNC_T;
 		node->nameFunc = (char *) "cos";
-		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
 		return node;
 	}
 	else if (myStrcmp ((const char *) nameFunction, "tg") == 0)
@@ -88,7 +86,6 @@ node_t * createNodeWithFunction (char * nameFunction)
 
 		node->type = FUNC_T;
 		node->nameFunc = (char *) "tg";
-		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
 		return node;
 	}
 	else if (myStrcmp ((const char *) nameFunction, "ctg") == 0)
@@ -98,7 +95,6 @@ node_t * createNodeWithFunction (char * nameFunction)
 
 		node->type = FUNC_T;
 		node->nameFunc = (char *) "ctg";
-		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
 		return node;
 	}
 	else if (myStrcmp ((const char *) nameFunction, "log") == 0 || myStrcmp ((const char *) nameFunction, "ln") == 0)
@@ -108,7 +104,6 @@ node_t * createNodeWithFunction (char * nameFunction)
 
 		node->type = FUNC_T;
 		node->nameFunc = (char *) "ln";
-		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
 		return node;
 	}
 	else
@@ -131,7 +126,6 @@ node_t * copyNode (node_t * nodeForCopy)
 	{
 		newLeftNode = (node_t *) calloc (1, sizeof (node_t));
 		MY_ASSERT (newLeftNode == nullptr, "Unable to allocate new memory");
-		printf ("\nin newLeftNode\n");
 		*newLeftNode = *(nodeForCopy->left);
 		newNode->left = newLeftNode;
 		newLeftNode->parent = newNode;
@@ -140,7 +134,6 @@ node_t * copyNode (node_t * nodeForCopy)
 	{
 		newRightNode = (node_t *) calloc (1, sizeof (node_t));
 		MY_ASSERT (newRightNode == nullptr, "Unable to allocate new memory");
-		printf ("\n in newRightNode\n");
 		*newRightNode = *(nodeForCopy->right);
 		newNode->right = newRightNode;
 		newRightNode->parent = newNode;

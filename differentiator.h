@@ -29,12 +29,12 @@ enum op_t {
 
 //--------------------------------------------operations with a tree--------------------------------------------
 void removeSpaces (char * dest, const char * source);
-node_t * getGrammar ();
-node_t * getExpression (void);
-node_t * getT (void);
-node_t * getDegree (void);
-node_t * getBracket (void);
-node_t * getNumber (void);
+node_t * getGrammar (void);
+node_t * getExpression (char ** str);
+node_t * getT (char ** str);
+node_t * getDegree (char ** str);
+node_t * getBracket (char ** str);
+node_t * getNumber (char ** str);
 void deleteNode (node_t * node);
 //--------------------------------------------------------------------------------------------------------------
 

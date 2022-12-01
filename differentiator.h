@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <ctype.h>
+#include <math.h>
 #include "tree.h"
 
 enum IS_LAST {
@@ -26,7 +27,7 @@ enum op_t {
     ROOT = 6
 };
 
-//-------------------------------------------------building a tree----------------------------------------------
+//--------------------------------------------operations with a tree--------------------------------------------
 void removeSpaces (char * dest, const char * source);
 node_t * getGrammar (const char * str);
 node_t * getExpression (void);
@@ -34,6 +35,7 @@ node_t * getT (void);
 node_t * getDegree (void);
 node_t * getBracket (void);
 node_t * getNumber (void);
+void deleteNode (node_t * node);
 //--------------------------------------------------------------------------------------------------------------
 
 //---------------------------------------------dump to console--------------------------------------------------
@@ -52,5 +54,18 @@ node_t * difMulDiv (node_t * node);
 node_t * difDegree (node_t * node);
 node_t * difNumberOrVar (node_t * node);
 //----------------------------------------------------------------------------------------------------------------------------------
+
+//-------------------------------------------------------support functions---------------------------------------------------------
+void simplifyExpToOne (node_t * node);
+int compareFractionalNum (double firstNum, double secondNum);
+
+//---------------------------------------------------------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------dump to tex file------------------------------------------------------------
+void selectingNameOfLatexFile (void);
+//----------------------------------------------------------------------------------------------------------------------------------
+
 
 #endif

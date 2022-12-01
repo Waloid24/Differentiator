@@ -1,5 +1,8 @@
 #include "differentiator.h"
 
+#define dumpTexTree(text, ...)\
+    fprintf (latexFile, text, ##__VA_ARGS__);
+
 //-------------------------------------------------------------building a tree-------------------------------------------------------
 const char * s = nullptr;
 
@@ -117,7 +120,9 @@ node_t * getNumber (void)
     if (isalpha(*s))
     {
         char buf[10] = "";
-        sscanf (s, "%[A-z]", buf);
+        sscanf (s, "%[a-z]", buf);
+            printf ("after sscanf: buf = %s\n", buf);
+
         int wordLength = numOfLetters (buf);
 
         MY_ASSERT (wordLength == 0, "Failed line reading");
@@ -129,6 +134,14 @@ node_t * getNumber (void)
         }
         else
         {
+            if (myStrcmp ((const char *) buf, "ln") == 0)
+            {
+                buf[0] = 'l';
+                buf[1] = 'o';
+                buf[2] = 'g';
+                buf[3] = '\0';
+            }
+            printf ("buf = %s\n", buf);
             node_t * function = createNodeWithFunction (buf);
             node_t * followingExpression = getBracket ();
             function->right = nullptr;
@@ -215,10 +228,71 @@ int numOfLetters (const char * string)
 }
 //---------------------------------------------------------------------------------------------------------------------------------
 
+//-------------------------------------------------------simplify---------------------------------------------------------
+void simplifyExpToOne (node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to node for simplify");
+    printf ("There!\n");
+    if ((node->left != nullptr) && (node->left->op_t == OP_DEG) && (compareFractionalNum(node->left->right->elem, 1) == 1))
+    {
+        node_t * saveNodeLeftLeft = node->left->left;
+
+        deleteNode (node->left->right);
+        deleteNode (node->left);
+
+        node->left = saveNodeLeftLeft;
+        printf ("node->left->elem = %lf\n", node->left->elem);
+    }
+    else if ((node->right != nullptr) && (node->right->op_t == OP_DEG) && (compareFractionalNum(node->right->right->elem, 1) == 1))
+    {
+        node_t * saveNodeRightLeft = node->right->left;
+        printf ("node->right->op_t = %c\n", node->right->op_t);
+        deleteNode (node->right->right);
+        deleteNode (node->right);
+
+        node->right = saveNodeRightLeft;
+        printf ("node->right->elem1111 = %lf\n", node->right->elem);
+        printf ("Here!1111\n");
+    }
+    if (node->left != nullptr)
+    {
+        printf ("once again in this function\n");
+        simplifyExpToOne (node->left);
+        printf ("exited this function\n");
+
+    }
+
+    printf ("Here!");
+
+    if (node->right != nullptr)
+        simplifyExpToOne (node->right);
+}
+//---------------------------------------------------------------------------------------------------------------------------------
+
+int compareFractionalNum (double firstNum, double secondNum)
+{
+    if (abs(firstNum-secondNum) < 0.00001)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+void deleteNode (node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to the node");
+    free (node);
+}
+
 //--------------------------------------------creating a tree after differentiation------------------------------------------------
 node_t * getGrammarForDif (node_t * node) //возможно, когда сделаешь двойной указатель, потом начнешь вылезать за строку из-за сдвига
 {
     MY_ASSERT (node == nullptr, "There is no access to the node");
+
+    printf ("in getGrammarForDif\n");
 
     node_t * firstNode = getExpressionForDif(node);
 
@@ -241,6 +315,7 @@ node_t * getExpressionForDif (node_t * node)
     }
     return (difMulDiv (node));
 }
+
 node_t * difMulDiv (node_t * node)
 {
     MY_ASSERT (node == nullptr, "There is no access to the node");
@@ -309,21 +384,33 @@ node_t * difDegree (node_t * node)
 
     while (node->op_t == OP_DEG)
     {
-        node_t * copyRightNodeForExpression = copyNode (node->right);
-        node_t * copyRightNodeForDegree = copyNode (node->right);
-        node_t * copyLeftNode = copyNode (node->left);
+        if (node->right->type == NUM_T)
+        {
+            node_t * copyRightNodeForExpression = copyNode (node->right);
+            node_t * copyRightNodeForDegree = copyNode (node->right);
+            node_t * copyLeftNode = copyNode (node->left);
 
-        node_t * numForDegreeIndicator = createNodeWithNum (1);
+            node_t * numForDegreeIndicator = createNodeWithNum (1);
 
-        node_t * newDegreeIndicator = createNodeWithOperation (OP_SUB, copyRightNodeForDegree, numForDegreeIndicator);
-        node_t * newDegree = createNodeWithOperation (OP_DEG, copyLeftNode, newDegreeIndicator);
-        node_t * headNodeForDeg = createNodeWithOperation (OP_MUL, copyRightNodeForExpression, newDegree);
+            node_t * newDegreeIndicator = createNodeWithOperation (OP_SUB, copyRightNodeForDegree, numForDegreeIndicator);
+            node_t * newDegree = createNodeWithOperation (OP_DEG, copyLeftNode, newDegreeIndicator);
+            node_t * headNodeForDeg = createNodeWithOperation (OP_MUL, copyRightNodeForExpression, newDegree);
 
-        return headNodeForDeg;
+            return headNodeForDeg;
+        }
+        else
+        {
+            node_t * copyOfExpression = copyNode (node);
+            node_t * nodeForLog = createNodeWithFunction ((char *) "log");
+            nodeForLog->left = createNodeWithVariable ('e'); //!!!createNodeWithConst
+            nodeForLog->right = copyNode (node->left);
+            node_t * headNodeForExpFunc = createNodeWithOperation (OP_MUL, copyOfExpression, nodeForLog);
+
+            return headNodeForExpFunc;
+        }
     }
     return (difNumberOrVar(node));
 }
-
 
 node_t * difNumberOrVar (node_t * node)
 {
@@ -341,7 +428,20 @@ node_t * difNumberOrVar (node_t * node)
         return node;
     }
 }
-
-
-
 //---------------------------------------------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------dump to file------------------------------------------------------------
+void selectingNameOfLatexFile (void)
+{
+    printf ("Please, enter the name of the LaTeX file file with the \".tex\" extension\n");
+    char * nameLatexFile = (char *) calloc (30, sizeof(char));
+    fgets (nameLatexFile, 29, stdin);
+
+    FILE * latexFile = fopen (nameLatexFile, "w");
+    MY_ASSERT (latexFile == nullptr, "There is no access to LaTeX file");
+
+    dumpTexTree ("Hello!\n");
+
+}
+//---------------------------------------------------------------------------------------------------------------------------------
+

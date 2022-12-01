@@ -13,7 +13,8 @@ enum nodeType {
     OPER_T,
     VAR_T,
     NUM_T,
-    FUNC_T
+    FUNC_T,
+    CONST_T
 };
 
 enum operationType {
@@ -50,6 +51,7 @@ typedef struct nodeTree node_t;
 node_t * createNodeWithNum (elem_t num);
 node_t * createNodeWithOperation (enum operationType operation, node_t * valLeftNode, node_t * valRightNode);
 node_t * createNodeWithVariable (char variableName);
+node_t * createNodeWithConst (char variableName);
 node_t * createNodeWithFunction (char * nameFunction);
 node_t * copyNode (node_t * nodeForCopy);
 //---------------------------------------------------------------------------------------------------------------

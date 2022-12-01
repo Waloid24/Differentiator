@@ -52,6 +52,17 @@ node_t * createNodeWithVariable (char variableName)
 	return node;
 }
 
+node_t * createNodeWithConst (char variableName)
+{
+	node_t * node = (node_t *) calloc (1, sizeof(node_t));
+	MY_ASSERT (node == nullptr, "Unable to allocate new memory");
+
+	node->type = CONST_T;
+	node->varName = variableName;
+
+	return node;
+}
+
 node_t * createNodeWithFunction (char * nameFunction)
 {
 	if (myStrcmp ((const char *) nameFunction, "sin") == 0)
@@ -94,6 +105,16 @@ node_t * createNodeWithFunction (char * nameFunction)
 		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
 		return node;
 	}
+	else if (myStrcmp ((const char *) nameFunction, "log") == 0 || myStrcmp ((const char *) nameFunction, "ln") == 0)
+	{
+		node_t * node = (node_t *) calloc (1, sizeof(node_t));
+		MY_ASSERT (node == nullptr, "Unable to allocate new memory");
+
+		node->type = FUNC_T;
+		node->nameFunc = (char *) "log";
+		printf ("in createNodeWithFunction: node->nameFunc = %s\n", node->nameFunc);
+		return node;
+	}
 	else
 	{
 		printf ("Incorrect function name\n");
@@ -104,41 +125,40 @@ node_t * createNodeWithFunction (char * nameFunction)
 node_t * copyNode (node_t * nodeForCopy)
 {
 	MY_ASSERT (nodeForCopy == nullptr, "There is no access to node");
-	printf ("Here!");
-		node_t * newNode = (node_t *) calloc (1, sizeof (node_t));
-		MY_ASSERT (newNode == nullptr, "Unable to allocate new memory");
-		*newNode = *nodeForCopy;
+	node_t * newNode = (node_t *) calloc (1, sizeof (node_t));
+	MY_ASSERT (newNode == nullptr, "Unable to allocate new memory");
+	*newNode = *nodeForCopy;
 
-		node_t * newLeftNode = nullptr;
-		node_t * newRightNode = nullptr;
-		if(nodeForCopy->left != nullptr)
-		{
-			newLeftNode = (node_t *) calloc (1, sizeof (node_t));
-			MY_ASSERT (newLeftNode == nullptr, "Unable to allocate new memory");
-			printf ("\nin newLeftNode\n");
-			*newLeftNode = *(nodeForCopy->left);
-			newNode->left = newLeftNode;
-			newLeftNode->parent = newNode;
-		}
-		if(nodeForCopy->right != nullptr)
-		{
-			newRightNode = (node_t *) calloc (1, sizeof (node_t));
-			MY_ASSERT (newRightNode == nullptr, "Unable to allocate new memory");
-			printf ("\n in newRightNode\n");
-			*newRightNode = *(nodeForCopy->right);
-			newNode->right = newRightNode;
-			newRightNode->parent = newNode;
-		}
+	node_t * newLeftNode = nullptr;
+	node_t * newRightNode = nullptr;
+	if(nodeForCopy->left != nullptr)
+	{
+		newLeftNode = (node_t *) calloc (1, sizeof (node_t));
+		MY_ASSERT (newLeftNode == nullptr, "Unable to allocate new memory");
+		printf ("\nin newLeftNode\n");
+		*newLeftNode = *(nodeForCopy->left);
+		newNode->left = newLeftNode;
+		newLeftNode->parent = newNode;
+	}
+	if(nodeForCopy->right != nullptr)
+	{
+		newRightNode = (node_t *) calloc (1, sizeof (node_t));
+		MY_ASSERT (newRightNode == nullptr, "Unable to allocate new memory");
+		printf ("\n in newRightNode\n");
+		*newRightNode = *(nodeForCopy->right);
+		newNode->right = newRightNode;
+		newRightNode->parent = newNode;
+	}
 
-		if (nodeForCopy->left != nullptr)
-		{
-			copyNode (nodeForCopy->left);
-		}
+	if (nodeForCopy->left != nullptr)
+	{
+		copyNode (nodeForCopy->left);
+	}
 
-		if (nodeForCopy->right != nullptr)
-		{
-			copyNode (nodeForCopy->right);
-		}
+	if (nodeForCopy->right != nullptr)
+	{
+		copyNode (nodeForCopy->right);
+	}
 
 	return newNode;
 }
@@ -193,7 +213,7 @@ void writeNodeToDotFile (const node_t * node, FILE * graphicDump)
 	{
 		dumplineTree ("\t node%p [label=\"{ %c | %p }\"];\n", node, node->op_t, node);
 	}
-	else if (node->type == VAR_T)
+	else if (node->type == VAR_T || node->type == CONST_T)
 	{
 		dumplineTree ("\t node%p [label=\"{ %c | %p }\"];\n", node, node->varName, node);
 	}

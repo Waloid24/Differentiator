@@ -35,10 +35,10 @@ node_t * getGrammar (void)
     removeSpaces (strFixed, string);
 
     // printf ("in getGrammar: str = %s\n", strFixed);
-    s = strFixed;
     printf ("in getGrammar: s = %s\n", strFixed);
-    node_t * firstNode = getExpression();
-    if (*s == '\0')
+    node_t * firstNode = getExpression(&strFixed);
+
+    if (*strFixed == '\0')
     {
         printf ("Fucking hands, they didn't write the expression again\n");
         return firstNode;
@@ -46,14 +46,14 @@ node_t * getGrammar (void)
     return firstNode;
 }
 
-node_t * getExpression (void)
+node_t * getExpression (char ** str)
 {
-    node_t * leftNode = getT();
-    while (*s == '+' || *s == '-')
+    node_t * leftNode = getT (str);
+    while (**str == '+' || **str == '-')
     {
-        char op = *s;
-        s++;
-        node_t * rightNode = getT ();
+        char op = **str;
+        (*str)++;
+        node_t * rightNode = getT (str);
 
         if (op == '+')
         {
@@ -68,14 +68,14 @@ node_t * getExpression (void)
     return leftNode;
 }
 
-node_t * getT (void)
+node_t * getT (char ** str)
 {
-    node_t * leftNode = getDegree ();
-    while (*s == '*' || *s == '/')
+    node_t * leftNode = getDegree (str);
+    while (**str == '*' || **str == '/')
     {
-        char op = *s;
-        s++;
-        node_t * rightNode = getDegree ();
+        char op = **str;
+        (*str)++;
+        node_t * rightNode = getDegree (str);
 
         if (op == '*')
         {
@@ -89,52 +89,51 @@ node_t * getT (void)
     return leftNode;
 }
 
-node_t * getDegree (void)
+node_t * getDegree (char ** str)
 {
-    node_t * leftNode = getBracket();
-    while (*s == '^')
+    node_t * leftNode = getBracket(str);
+    while (**str == '^')
     {
-        char op = *s;
-        s++;
-        node_t * rightNode = getBracket();
+        char op = **str;
+        (*str)++;
+        node_t * rightNode = getBracket(str);
 
         leftNode = createNodeWithOperation (OP_DEG, leftNode, rightNode);
     }
     return leftNode;
 }
 
-node_t * getBracket (void)
+node_t * getBracket (char ** str)
 {
     node_t * val = nullptr;
-    if (*s == '(')
+    if (**str == '(')
     {
-        s++;
-        val = getExpression ();
-        if (*s == '(')
+        (*str)++;
+        val = getExpression (str);
+        if (**str == '(')
         {
-            printf ("*(s+1) = %c\n", *(s+1));
+            printf ("*(s+1) = %c\n", *(*str+1));
         }
-        // assert (*s == '(');
-        s++;
+        (*str)++;
     }
     else
     {
-        val = getNumber ();
+        val = getNumber (str);
     }
     return val;
 }
 
-node_t * getNumber (void)
+node_t * getNumber (char ** str)
 {
-    if (isalpha(*s))
+    if (isalpha(**str))
     {
         char buf[10] = "";
-        sscanf (s, "%[a-z]", buf);
+        sscanf (*str, "%[a-z]", buf);
 
         int wordLength = numOfLetters (buf);
 
         MY_ASSERT (wordLength == 0, "Failed line reading");
-        s = s+wordLength;
+        (*str) = (*str)+wordLength;
         if (wordLength == 1)
         {
             return (createNodeWithVariable (buf[0]));
@@ -149,7 +148,7 @@ node_t * getNumber (void)
             }
             printf ("buf = %s\n", buf);
             node_t * function = createNodeWithFunction (buf);
-            node_t * followingExpression = getBracket ();
+            node_t * followingExpression = getBracket (str);
             function->right = nullptr;
             function->left = followingExpression;
             followingExpression->parent = function;
@@ -160,13 +159,13 @@ node_t * getNumber (void)
     else
     {
         int val = 0;
-        const char * sOld = s;
-        while ('0' <= *s && *s <= '9')
+        const char * sOld = *str;
+        while ('0' <= **str && **str <= '9')
         {
-            val = val*10 + *s - '0';
-            s++;
+            val = val*10 + **str - '0';
+            (*str)++;
         }
-        assert (s != sOld);
+        assert (*str != sOld);
         return (createNodeWithNum (val));
     }
 }
@@ -401,6 +400,14 @@ void removeConstants (node_t ** node)
         {
             printf ("Mistake! There is no such operation\n");
         }
+    }
+    if ((*node)->left != nullptr)
+    {
+        removeConstants (&((*node)->left));
+    }
+    if ((*node)->right != nullptr)
+    {
+        removeConstants (&((*node)->right));
     }
 }
 
@@ -676,8 +683,6 @@ void deleteNode (node_t * node)
 node_t * getGrammarForDif (node_t * node) //возможно, когда сделаешь двойной указатель, потом начнешь вылезать за строку из-за сдвига
 {
     MY_ASSERT (node == nullptr, "There is no access to the node");
-
-    printf ("in getGrammarForDif\n");
 
     node_t * firstNode = getExpressionForDif(node);
 

@@ -6,7 +6,6 @@ int main (void)
     FILE * logFile = fopen ("log.txt", "a");
 
     node_t * firstNode = getGrammar ();
-
     graphicDumpTree (firstNode);
 
     simplifyExpression (&firstNode);
@@ -15,7 +14,10 @@ int main (void)
     node_t * difNode = getGrammarForDif (firstNode);
     graphicDumpTree (difNode);
 
-    simplifyExpression (&firstNode);
-    graphicDumpTree (firstNode);
+    simplifyExpression (&difNode);
+    graphicDumpTree (difNode);
+
+    graphicDumpTree (difNode);
+    dumpToTexFile (difNode);
 
 }

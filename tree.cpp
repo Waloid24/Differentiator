@@ -120,33 +120,18 @@ node_t * copyNode (node_t * nodeForCopy)
 	MY_ASSERT (newNode == nullptr, "Unable to allocate new memory");
 	*newNode = *nodeForCopy;
 
-	node_t * newLeftNode = nullptr;
-	node_t * newRightNode = nullptr;
-	if(nodeForCopy->left != nullptr)
-	{
-		newLeftNode = (node_t *) calloc (1, sizeof (node_t));
-		MY_ASSERT (newLeftNode == nullptr, "Unable to allocate new memory");
-		*newLeftNode = *(nodeForCopy->left);
-		newNode->left = newLeftNode;
-		newLeftNode->parent = newNode;
-	}
-	if(nodeForCopy->right != nullptr)
-	{
-		newRightNode = (node_t *) calloc (1, sizeof (node_t));
-		MY_ASSERT (newRightNode == nullptr, "Unable to allocate new memory");
-		*newRightNode = *(nodeForCopy->right);
-		newNode->right = newRightNode;
-		newRightNode->parent = newNode;
-	}
-
 	if (nodeForCopy->left != nullptr)
 	{
-		copyNode (nodeForCopy->left);
+		node_t * leftNode = copyNode (nodeForCopy->left);
+		newNode->left = leftNode;
+		leftNode->parent = newNode;
 	}
 
 	if (nodeForCopy->right != nullptr)
 	{
-		copyNode (nodeForCopy->right);
+		node_t * rightNode = copyNode (nodeForCopy->right);
+		newNode->right = rightNode;
+		rightNode->parent = newNode;
 	}
 
 	return newNode;

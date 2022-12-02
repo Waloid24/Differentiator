@@ -1,7 +1,17 @@
 #include "differentiator.h"
 
 #define dumpTexTree(text, ...)\
-    fprintf (latexFile, text, ##__VA_ARGS__);
+    fprintf (texfile, text, ##__VA_ARGS__)
+
+static const char * TEX_PREVIEW = "\\documentclass[a4paper, 12pt]{article}\n"
+                          "\\usepackage[a4paper,top=1.5cm, bottom=1.5cm, left=1cm, right=1cm]"
+                          "{geometry}\n"
+                          "\\usepackage[utf8]{inputenc}\n"
+                          "\\usepackage{mathtext}                \n"
+                          "\\usepackage[english, russian]{babel} \n"
+                          "\\title{Matanchik}\n"
+                          "\\author{Witcherok, DedSquad}\n"
+                          "\\date{\\today}\n";
 
 //-------------------------------------------------------------building a tree-------------------------------------------------------
 const char * s = nullptr;
@@ -34,10 +44,7 @@ node_t * getGrammar (void)
 
     removeSpaces (strFixed, string);
 
-    // printf ("in getGrammar: str = %s\n", strFixed);
-    printf ("in getGrammar: s = %s\n", strFixed);
     node_t * firstNode = getExpression(&strFixed);
-
     if (*strFixed == '\0')
     {
         printf ("Fucking hands, they didn't write the expression again\n");
@@ -129,7 +136,6 @@ node_t * getNumber (char ** str)
     {
         char buf[10] = "";
         sscanf (*str, "%[a-z]", buf);
-
         int wordLength = numOfLetters (buf);
 
         MY_ASSERT (wordLength == 0, "Failed line reading");
@@ -709,18 +715,30 @@ node_t * getExpressionForDif (node_t * node)
 node_t * difMulDiv (node_t * node)
 {
     MY_ASSERT (node == nullptr, "There is no access to the node");
-
+    printf ("hello!\n");
     while (node->op_t == OP_MUL)
     {
         node_t * copyRightNode = copyNode (node->right);
+        printf ("now graphic for \"copyRightNode\"\n");
+        graphicDumpTree (copyRightNode);
+
         node_t * copyLeftNode = copyNode (node->left);
+        printf ("now graphic for \"copyLeftNode\"\n");
+        graphicDumpTree (copyLeftNode);
 
         node_t * firstNode = createNodeWithOperation (OP_MUL, node->left, node->right);
+
+        printf ("now graphic for \"firstNode\"\n");
+        graphicDumpTree (firstNode);
+
         node_t * difLeftNodeForMul = getExpressionForDif (node->left);
         firstNode->left = difLeftNodeForMul;
         firstNode->right = copyRightNode;
         difLeftNodeForMul->parent = firstNode;
         copyRightNode->parent = firstNode;
+
+        printf ("now graphic for \"difLeftNodeForMul\"\n");
+        graphicDumpTree (difLeftNodeForMul);
 
         node_t * secondNode = createNodeWithOperation (OP_MUL, node->left, node->right);
         node_t * difRightNodeForMul = getExpressionForDif (node->right);
@@ -729,7 +747,16 @@ node_t * difMulDiv (node_t * node)
         difRightNodeForMul->parent = secondNode;
         copyLeftNode->parent = secondNode;
 
+        printf ("now graphic for \"secondNode\"\n");
+        graphicDumpTree (secondNode);
+
+        printf ("now graphic for \"difRightNodeForMul\"\n");
+        graphicDumpTree (difRightNodeForMul);
+
         node_t * headNodeForMul = createNodeWithOperation (OP_ADD, firstNode, secondNode);
+        printf ("now graphic for \"headNodeForMul\"\n");
+        graphicDumpTree (headNodeForMul);
+
         return headNodeForMul;
     }
     while (node->op_t == OP_DIV)
@@ -773,23 +800,36 @@ node_t * difDegree (node_t * node)
         if (node->right->type == NUM_T)
         {
             node_t * copyRightNodeForExpression = copyNode (node->right);
+
             node_t * copyRightNodeForDegree = copyNode (node->right);
-            node_t * copyLeftNode = copyNode (node->left);
+
+            node_t * firstCopyLeftNode = copyNode (node->left);
+
+            node_t * secondCopyLeftNode = copyNode (node->left);
 
             node_t * numForDegreeIndicator = createNodeWithNum (1);
 
             node_t * newDegreeIndicator = createNodeWithOperation (OP_SUB, copyRightNodeForDegree, numForDegreeIndicator);
-            node_t * newDegree = createNodeWithOperation (OP_DEG, copyLeftNode, newDegreeIndicator);
-            node_t * headNodeForDeg = createNodeWithOperation (OP_MUL, copyRightNodeForExpression, newDegree);
+            node_t * newDegree = createNodeWithOperation (OP_DEG, firstCopyLeftNode, newDegreeIndicator);
+            node_t * leftDescendant = createNodeWithOperation (OP_MUL, copyRightNodeForExpression, newDegree);
+
+            node_t * rightDescendant = getExpressionForDif (secondCopyLeftNode);
+            node_t * headNodeForDeg = createNodeWithOperation (OP_MUL, leftDescendant, rightDescendant);
 
             return headNodeForDeg;
         }
         else
         {
-            node_t * copyOfExpression = copyNode (node);
+            node_t * leftDescendant = copyNode (node);
+            node_t * copyRight = copyNode (node->right);
             node_t * nodeForLog = createNodeWithFunction ((char *) "ln");
             nodeForLog->left = copyNode (node->left);
-            node_t * headNodeForExpFunc = createNodeWithOperation (OP_MUL, copyOfExpression, nodeForLog);
+
+            node_t * difExp = getExpressionForDif (copyRight);
+
+            node_t * rightDescendant = createNodeWithOperation (OP_MUL, nodeForLog, difExp);
+
+            node_t * headNodeForExpFunc = createNodeWithOperation (OP_MUL, leftDescendant, rightDescendant);
 
             return headNodeForExpFunc;
         }
@@ -889,9 +929,144 @@ void selectingNameOfLatexFile (void)
 
     FILE * latexFile = fopen (nameLatexFile, "w");
     MY_ASSERT (latexFile == nullptr, "There is no access to LaTeX file");
-
-    dumpTexTree ("Hello!\n");
-
 }
 //---------------------------------------------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------dump to a texfile------------------------------------------------
+
+void dumpToTexFile (node_t * node)
+{
+    FILE * texfile = fopen("Derivative.tex", "w");
+    MY_ASSERT (texfile == nullptr, "There is no access to this file");
+    setbuf (texfile, nullptr);
+
+    texStart (texfile);
+
+    texPrintNode (texfile, node);
+
+    texFinish (texfile);
+}
+
+void texStart (FILE * texfile)
+{
+    dumpTexTree (TEX_PREVIEW);
+    dumpTexTree ("\\begin{document}\n");
+    // dumpTexTree ("\n\\maketitle\n");
+    dumpTexTree ("$f(x) = ");
+}
+
+
+void texPrintNode (FILE * texfile, node_t * node)
+{
+    MY_ASSERT (texfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    if (node->left != nullptr && node->right != nullptr)
+    {
+        dumpTexTree ("{");
+        texPrintNode (texfile, node->left);
+    }
+
+    switch (node->type)
+    {
+        case OPER_T:
+            texPrintOperation (texfile, node);
+            break;
+        case VAR_T:
+            texPrintVar (texfile, node);
+            break;
+        case NUM_T:
+            texPrintNum (texfile, node);
+            break;
+        case FUNC_T:
+            texPrintFunc (texfile, node);
+            break;
+        case CONST_T:
+            texPrintConst (texfile, node);
+            break;
+        default:
+            fprintf (stderr, "Non-existent node type\n");
+            break;
+    }
+
+    if (node->left != nullptr)
+    {
+        texPrintNode (texfile, node->left);
+        dumpTexTree ("}");
+    }
+    if (node->right != nullptr)
+    {
+        texPrintNode (texfile, node->right);
+        dumpTexTree ("}");
+    }
+}
+
+void texPrintOperation (FILE * texfile, node_t * node)
+{
+    MY_ASSERT (texfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    switch (node->op_t)
+    {
+        case OP_ADD:
+            dumpTexTree (" %c ", OP_ADD);
+            break;
+        case OP_SUB:
+            dumpTexTree (" %c ", OP_ADD);
+            break;
+        case OP_MUL:
+            dumpTexTree (" %c ", OP_MUL);
+            break;
+        case OP_DIV:
+            dumpTexTree (" %c ", OP_DIV);
+            break;
+        case OP_DEG:
+            dumpTexTree (" %c ", OP_DEG);
+            break;
+        default:
+            printf ("There is no such node\n");
+            break;
+    }
+}
+
+void texPrintVar (FILE * texfile, node_t * node)
+{
+    MY_ASSERT (texfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    dumpTexTree ("%c", node->varName);
+}
+
+void texPrintNum (FILE * texfile, node_t * node)
+{
+    MY_ASSERT (texfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    dumpTexTree ("%.2lf", node->elem);
+}
+
+void texPrintFunc (FILE * texfile, node_t * node)
+{
+    MY_ASSERT (texfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    dumpTexTree ("%s", node->nameFunc);
+}
+
+void texPrintConst (FILE * texfile, node_t * node)
+{
+    MY_ASSERT (texfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    dumpTexTree ("%c", node->varName);
+}
+
+int texFinish(FILE * texfile)
+{
+    dumpTexTree("$\n\\end{document}\n");
+
+    fclose(texfile);
+
+    return 0;
+}
 

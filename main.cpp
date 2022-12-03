@@ -20,4 +20,9 @@ int main (void)
     graphicDumpTree (difNode);
     dumpToTexFile (difNode);
 
+    graphicDumpTree (firstNode);
+    dumpToTexFile (firstNode);
+
+
+
 }

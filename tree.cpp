@@ -34,6 +34,9 @@ node_t * createNodeWithOperation (enum operationType operation, node_t * valLeft
 	node->type = OPER_T;
 	node->op_t = operation;
 
+	valLeftNode->parent = node;
+	valRightNode->parent = node;
+
 	return node;
 }
 

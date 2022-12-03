@@ -14,7 +14,6 @@ static const char * TEX_PREVIEW = "\\documentclass[a4paper, 12pt]{article}\n"
                           "\\date{\\today}\n";
 
 //-------------------------------------------------------------building a tree-------------------------------------------------------
-const char * s = nullptr;
 
 void removeSpaces (char * dest, const char * source)
 {
@@ -690,6 +689,10 @@ node_t * getGrammarForDif (node_t * node) //возможно, когда сде�
 {
     MY_ASSERT (node == nullptr, "There is no access to the node");
 
+    // node_t * copyHeadNode = copyNode (node);
+    // printf ("dump for getGrammarForDif: copyHeadNode = %p, node = %p\n", copyHeadNode, node);
+    // graphicDumpTree (copyHeadNode);
+
     node_t * firstNode = getExpressionForDif(node);
 
     return firstNode;
@@ -702,12 +705,18 @@ node_t * getExpressionForDif (node_t * node)
     {
         node_t * leftNode = getExpressionForDif (node->left);
         node_t * rightNode = getExpressionForDif (node->right);
-        node->left = leftNode;
-        node->right = rightNode;
-        leftNode->parent = node;
-        rightNode->parent = node;
-        return node;
+        node_t * headNode = nullptr;
 
+        if (node->op_t == OP_ADD)
+        {
+            headNode = createNodeWithOperation (OP_ADD, leftNode, rightNode);
+        }
+        else
+        {
+            headNode = createNodeWithOperation (OP_SUB, leftNode, rightNode);
+        }
+
+        return headNode;
     }
     return (difMulDiv (node));
 }
@@ -715,74 +724,37 @@ node_t * getExpressionForDif (node_t * node)
 node_t * difMulDiv (node_t * node)
 {
     MY_ASSERT (node == nullptr, "There is no access to the node");
-    printf ("hello!\n");
     while (node->op_t == OP_MUL)
     {
+        node_t * difLeftNode = getExpressionForDif (node->left);
+        node_t * difRightNode = getExpressionForDif (node->right);
+
+        node_t * copyLeftNode  = copyNode (node->left);
         node_t * copyRightNode = copyNode (node->right);
-        printf ("now graphic for \"copyRightNode\"\n");
-        graphicDumpTree (copyRightNode);
 
-        node_t * copyLeftNode = copyNode (node->left);
-        printf ("now graphic for \"copyLeftNode\"\n");
-        graphicDumpTree (copyLeftNode);
+        node_t * firstMul = createNodeWithOperation (OP_MUL, difLeftNode, copyRightNode);
+        node_t * secondMul = createNodeWithOperation (OP_MUL, copyLeftNode, difRightNode);
 
-        node_t * firstNode = createNodeWithOperation (OP_MUL, node->left, node->right);
-
-        printf ("now graphic for \"firstNode\"\n");
-        graphicDumpTree (firstNode);
-
-        node_t * difLeftNodeForMul = getExpressionForDif (node->left);
-        firstNode->left = difLeftNodeForMul;
-        firstNode->right = copyRightNode;
-        difLeftNodeForMul->parent = firstNode;
-        copyRightNode->parent = firstNode;
-
-        printf ("now graphic for \"difLeftNodeForMul\"\n");
-        graphicDumpTree (difLeftNodeForMul);
-
-        node_t * secondNode = createNodeWithOperation (OP_MUL, node->left, node->right);
-        node_t * difRightNodeForMul = getExpressionForDif (node->right);
-        secondNode->left = copyLeftNode;
-        secondNode->right = difRightNodeForMul;
-        difRightNodeForMul->parent = secondNode;
-        copyLeftNode->parent = secondNode;
-
-        printf ("now graphic for \"secondNode\"\n");
-        graphicDumpTree (secondNode);
-
-        printf ("now graphic for \"difRightNodeForMul\"\n");
-        graphicDumpTree (difRightNodeForMul);
-
-        node_t * headNodeForMul = createNodeWithOperation (OP_ADD, firstNode, secondNode);
-        printf ("now graphic for \"headNodeForMul\"\n");
-        graphicDumpTree (headNodeForMul);
+        node_t * headNodeForMul = createNodeWithOperation (OP_ADD, firstMul, secondMul);
 
         return headNodeForMul;
     }
     while (node->op_t == OP_DIV)
     {
+        node_t * difLeftNode = getExpressionForDif (node->left);
+        node_t * difRightNode = getExpressionForDif (node->right);
+
+        node_t * copyLeftNode  = copyNode (node->left);
         node_t * copyRightNode = copyNode (node->right);
-        node_t * copyLeftNode = copyNode (node->left);
 
-        node_t * firstNode = createNodeWithOperation (OP_MUL, copyLeftNode, copyRightNode); //? (OP_MUL, node->left, node->right)
-        node_t * difLeftNodeForMul = getExpressionForDif (node->left);
-        firstNode->left = difLeftNodeForMul;
-        firstNode->right = copyRightNode;
-        difLeftNodeForMul->parent = firstNode;
-        copyRightNode->parent = firstNode;
+        node_t * firstMul = createNodeWithOperation (OP_MUL, difLeftNode, copyRightNode);
+        node_t * secondMul = createNodeWithOperation (OP_MUL, copyLeftNode, difRightNode);
 
-        node_t * secondNode = createNodeWithOperation (OP_MUL, node->left, node->right);
-        node_t * difRightNodeForMul = getExpressionForDif (node->right);
-        secondNode->left = copyLeftNode;
-        secondNode->right = difRightNodeForMul;
-        difRightNodeForMul->parent = secondNode;
-        copyLeftNode->parent = secondNode;
+        node_t * headNodeForNumerator = createNodeWithOperation (OP_SUB, firstMul, secondMul);
 
-        node_t * headNodeForNumerator = createNodeWithOperation (OP_SUB, firstNode, secondNode);
-
-        node_t * degreeOfDenominator = createNodeWithNum (2);
-        node_t * copiedRightNode = copyNode (copyRightNode);
-        node_t * headNodeForDenominator = createNodeWithOperation (OP_DEG, copiedRightNode, degreeOfDenominator);
+        node_t * degIndicator = createNodeWithNum (2);
+        node_t * copyRightNodeForDenominator = copyNode (node->right);
+        node_t * headNodeForDenominator = createNodeWithOperation (OP_DEG, copyRightNodeForDenominator, degIndicator);
 
         node_t * headNodeForDiv = createNodeWithOperation (OP_DIV, headNodeForNumerator, headNodeForDenominator);
 
@@ -799,37 +771,35 @@ node_t * difDegree (node_t * node)
     {
         if (node->right->type == NUM_T)
         {
-            node_t * copyRightNodeForExpression = copyNode (node->right);
+            node_t * copyDegreeIndicator = copyNode (node->right);
+            node_t * unit = createNodeWithNum (1);
+            node_t * newDegreeIndicator = createNodeWithOperation (OP_SUB, copyDegreeIndicator, unit);
 
-            node_t * copyRightNodeForDegree = copyNode (node->right);
+            node_t * copyLeftNode = copyNode (node->left);
+            node_t * firstMul = createNodeWithOperation (OP_DEG, copyLeftNode, newDegreeIndicator);
 
-            node_t * firstCopyLeftNode = copyNode (node->left);
+            node_t * secondMul = copyNode (node->right);
+            node_t * leftDescendant = createNodeWithOperation (OP_MUL, secondMul, firstMul);
 
-            node_t * secondCopyLeftNode = copyNode (node->left);
-
-            node_t * numForDegreeIndicator = createNodeWithNum (1);
-
-            node_t * newDegreeIndicator = createNodeWithOperation (OP_SUB, copyRightNodeForDegree, numForDegreeIndicator);
-            node_t * newDegree = createNodeWithOperation (OP_DEG, firstCopyLeftNode, newDegreeIndicator);
-            node_t * leftDescendant = createNodeWithOperation (OP_MUL, copyRightNodeForExpression, newDegree);
-
-            node_t * rightDescendant = getExpressionForDif (secondCopyLeftNode);
-            node_t * headNodeForDeg = createNodeWithOperation (OP_MUL, leftDescendant, rightDescendant);
+            printf ("in difDegree: before getExpressionForDif node->left:\n");
+            graphicDumpTree (node->left);
+            node_t * difOfDegreeBase = getExpressionForDif (node->left);
+            node_t * headNodeForDeg = createNodeWithOperation (OP_MUL, leftDescendant, difOfDegreeBase);
 
             return headNodeForDeg;
         }
         else
         {
-            node_t * leftDescendant = copyNode (node);
-            node_t * copyRight = copyNode (node->right);
-            node_t * nodeForLog = createNodeWithFunction ((char *) "ln");
-            nodeForLog->left = copyNode (node->left);
+            node_t * copyExpression = copyNode (node);
+            node_t * func = createNodeWithFunction ((char*) "ln");
+            node_t * argOfFunc = createNodeWithNum (2);
+            func->left = argOfFunc;
+            argOfFunc->parent = func;
+            node_t * firstMul = createNodeWithOperation (OP_MUL, copyExpression, func);
 
-            node_t * difExp = getExpressionForDif (copyRight);
+            node_t * difRightNode = getExpressionForDif (node->right);
 
-            node_t * rightDescendant = createNodeWithOperation (OP_MUL, nodeForLog, difExp);
-
-            node_t * headNodeForExpFunc = createNodeWithOperation (OP_MUL, leftDescendant, rightDescendant);
+            node_t * headNodeForExpFunc = createNodeWithOperation (OP_MUL, firstMul, difRightNode);
 
             return headNodeForExpFunc;
         }
@@ -854,6 +824,7 @@ node_t * difNumberOrVar (node_t * node)
     }
     else
     {
+        printf ("Error\n");
         return node;
     }
 }
@@ -866,6 +837,7 @@ node_t * difFunc (node_t * node)
     {
         node_t * unit = createNodeWithNum (1);
         node_t * copyArgument = copyNode (node->left);
+        // node_t * copyForRightDescendant = copyNode (node->left);
         node_t * leftDescendant = createNodeWithOperation (OP_DIV, unit, copyArgument);
         node_t * rightDescendant = getExpressionForDif (node->left);
         node_t * headNode = createNodeWithOperation (OP_MUL, leftDescendant, rightDescendant);
@@ -877,6 +849,7 @@ node_t * difFunc (node_t * node)
     {
         node_t * leftDescendant = createNodeWithFunction ((char *) "cos");
         node_t * copyArgument = copyNode (node->left);
+        // node_t * copyForRightDescendant = copyNode (node->left);
         leftDescendant->left = copyArgument;
         copyArgument->parent = leftDescendant;
         node_t * rightDescendant = getExpressionForDif (node->left);
@@ -889,6 +862,7 @@ node_t * difFunc (node_t * node)
     {
         node_t * unit = createNodeWithNum (-1);
         node_t * copyArgument = copyNode (node->left);
+        // node_t * copyForRightDescendant = copyNode (node->left);
         node_t * difCos = createNodeWithFunction ((char *) "sin");
         difCos->left = copyArgument;
         copyArgument->parent = difCos;
@@ -903,6 +877,7 @@ node_t * difFunc (node_t * node)
         node_t * unit = createNodeWithNum (1);
         node_t * degIndicator = createNodeWithNum (2);
         node_t * copyArgument = copyNode (node->left);
+        // node_t * copyForRightDescendant = copyNode (node->left);
         node_t * difSin = createNodeWithFunction ((char *) "cos");
         difSin->left = copyArgument;
         copyArgument->parent = difSin;
@@ -917,18 +892,6 @@ node_t * difFunc (node_t * node)
     {
         return node;
     }
-}
-//---------------------------------------------------------------------------------------------------------------------------------
-
-//-----------------------------------------------------------dump to file------------------------------------------------------------
-void selectingNameOfLatexFile (void)
-{
-    printf ("Please, enter the name of the LaTeX file file with the \".tex\" extension\n");
-    char * nameLatexFile = (char *) calloc (30, sizeof(char));
-    fgets (nameLatexFile, 29, stdin);
-
-    FILE * latexFile = fopen (nameLatexFile, "w");
-    MY_ASSERT (latexFile == nullptr, "There is no access to LaTeX file");
 }
 //---------------------------------------------------------------------------------------------------------------------------------
 
@@ -963,7 +926,7 @@ void texPrintNode (FILE * texfile, node_t * node)
 
     if (node->left != nullptr && node->right != nullptr)
     {
-        dumpTexTree ("{");
+        dumpTexTree ("(");
         texPrintNode (texfile, node->left);
     }
 
@@ -992,12 +955,12 @@ void texPrintNode (FILE * texfile, node_t * node)
     if (node->left != nullptr)
     {
         texPrintNode (texfile, node->left);
-        dumpTexTree ("}");
+        dumpTexTree (")");
     }
     if (node->right != nullptr)
     {
         texPrintNode (texfile, node->right);
-        dumpTexTree ("}");
+        dumpTexTree (")");
     }
 }
 
@@ -1068,5 +1031,15 @@ int texFinish(FILE * texfile)
     fclose(texfile);
 
     return 0;
+}
+
+void selectingNameOfLatexFile (void)
+{
+    printf ("Please, enter the name of the LaTeX file file with the \".tex\" extension\n");
+    char * nameLatexFile = (char *) calloc (30, sizeof(char));
+    fgets (nameLatexFile, 29, stdin);
+
+    FILE * latexFile = fopen (nameLatexFile, "w");
+    MY_ASSERT (latexFile == nullptr, "There is no access to LaTeX file");
 }
 

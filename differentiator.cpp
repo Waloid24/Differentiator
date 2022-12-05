@@ -3,15 +3,59 @@
 #define dumpTexTree(text, ...)\
     fprintf (texfile, text, ##__VA_ARGS__)
 
-static const char * TEX_PREVIEW = "\\documentclass[a4paper, 12pt]{article}\n"
-                          "\\usepackage[a4paper,top=1.5cm, bottom=1.5cm, left=1cm, right=1cm]"
-                          "{geometry}\n"
-                          "\\usepackage[utf8]{inputenc}\n"
-                          "\\usepackage{mathtext}                \n"
-                          "\\usepackage[english, russian]{babel} \n"
-                          "\\title{Matanchik}\n"
-                          "\\author{Witcherok, DedSquad}\n"
-                          "\\date{\\today}\n";
+#define dumpPython(text, ...)\
+    fprintf (pyfile, text, ##__VA_ARGS__)
+
+static const char * TEX_OPTIONS =
+"\\documentclass[12pt,a4paper]{article}\n"
+"\\usepackage[utf8x]{inputenc}\n"
+"\\usepackage{ucs}\n"
+"\\usepackage{diagbox}\n"
+"\\usepackage[english,russian]{babel}\n"
+"\\usepackage[OT1]{fontenc}\n"
+"\\usepackage{amsmath}\n"
+"\\usepackage{amsfonts}\n"
+"\\usepackage{amssymb}\n"
+"\\usepackage{wasysym}\n"
+"\\usepackage{wrapfig}\n"
+"\\usepackage{physics}\n"
+"\\usepackage[normalem]{ulem}\n"
+"\\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm,includefoot,footskip=1.5cm]{geometry}\n"
+"\\usepackage{mathrsfs}\n"
+"\\usepackage{graphicx}\n"
+"\\graphicspath{{pictures/}}\n"
+"\\DeclareGraphicsExtensions{.png,.jpg,.jpeg}\n"
+"\\usepackage{indentfirst}\n"
+"\\usepackage[T2A]{fontenc}\n"
+"\\usepackage{subfigure}\n"
+"\\usepackage{fancyhdr}\n"
+"\\pagestyle{fancy}\n"
+"\\usepackage{caption}\n"
+"\\captionsetup[table]{justification=}\n"
+"\\usepackage{tabularx}\n"
+"\\usepackage{floatrow}\n"
+"\\usepackage{multicol}\n"
+"\\usepackage[dvipsnames]{color}\n"
+"\\usepackage{colortbl}\n\n";
+
+static const char * TEX_TITLE_PAGE =
+"\\begin{titlepage}\n"
+    "\\begin{center}\n"
+    "\\large Московский физико-технический институт\\\\ \n"
+    "(национальный исследовательский университет)\\\\ \n"
+    "\\includegraphics[scale=0.1]{mipt_image1.jpg}\\\\ \n"
+    "\\vspace{5cm}\n"
+    "\\Large Лабораторная работа № 1.3.1\\\\ \n"
+    "\\vspace{2cm}\n"
+    "\\textbf{\Huge <<Определение модуля Юнга на основе исследования деформаций растяжения и изгиба>>}\\\\ \n"
+    "\\end{center}\n"
+
+    "\\vspace{8cm}\n"
+    "{\\raggedleft \\large Выполнили:\\\\ больные наголову студенты\\par\n"
+    "}"
+"\\end{titlepage}\n\n";
+
+
 
 //-------------------------------------------------------------building a tree-------------------------------------------------------
 
@@ -161,6 +205,14 @@ node_t * getNumber (char ** str)
             return (function);
         }
     }
+    else if (**str == '-' && isalnum(*(*str+1)))
+    {
+        (*str)++;
+        node_t * varOrNum = getNumber(str);
+        node_t * unit = createNodeWithNum (-1);
+        varOrNum = createNodeWithOperation (OP_MUL, unit, varOrNum);
+        return varOrNum;
+    }
     else
     {
         int val = 0;
@@ -235,6 +287,15 @@ int numOfLetters (const char * string)
         string++;
     }
     return number;
+}
+
+FILE * openTexfile (void)
+{
+    FILE * texfile = fopen ("log.txt", "a");
+    MY_ASSERT (texfile == nullptr, "There is no access to logfile");
+    setbuf (texfile, nullptr);
+
+    return texfile;
 }
 //---------------------------------------------------------------------------------------------------------------------------------
 
@@ -781,8 +842,6 @@ node_t * difDegree (node_t * node)
             node_t * secondMul = copyNode (node->right);
             node_t * leftDescendant = createNodeWithOperation (OP_MUL, secondMul, firstMul);
 
-            printf ("in difDegree: before getExpressionForDif node->left:\n");
-            graphicDumpTree (node->left);
             node_t * difOfDegreeBase = getExpressionForDif (node->left);
             node_t * headNodeForDeg = createNodeWithOperation (OP_MUL, leftDescendant, difOfDegreeBase);
 
@@ -895,39 +954,61 @@ node_t * difFunc (node_t * node)
 }
 //---------------------------------------------------------------------------------------------------------------------------------
 
-//-----------------------------------------------------dump to a texfile------------------------------------------------
-
-void dumpToTexFile (node_t * node)
-{
-    FILE * texfile = fopen("Derivative.tex", "w");
-    MY_ASSERT (texfile == nullptr, "There is no access to this file");
-    setbuf (texfile, nullptr);
-
-    texStart (texfile);
-
-    texPrintNode (texfile, node);
-
-    texFinish (texfile);
-}
+//----------------------------------------------------------dump to a texfile-------------------------------------------------------
 
 void texStart (FILE * texfile)
 {
-    dumpTexTree (TEX_PREVIEW);
-    dumpTexTree ("\\begin{document}\n");
-    // dumpTexTree ("\n\\maketitle\n");
-    dumpTexTree ("$f(x) = ");
+    dumpTexTree (TEX_OPTIONS);
+    dumpTexTree ("\\begin{document}\n\n");
+    dumpTexTree (TEX_TITLE_PAGE);
 }
 
+void startEquation (FILE * texfile, char var)
+{
+    dumpTexTree ("\\begin{equation}\n");
+    dumpTexTree ("\nДавайте возьмём производную от этого чуда!\n");
+    dumpTexTree ("f(%c) = ", var);
+}
+
+void startDifEquation (FILE * texfile, char var)
+{
+    dumpTexTree ("\nЭто не должно быть страшно! Посмотрим...\n");
+    dumpTexTree ("\\begin{equation}\n");
+    dumpTexTree ("f(%c)^\\prime_%c = ", var, var);
+}
+
+
+void endEquation (FILE * texfile)
+{
+    dumpTexTree ("\n\\end{equation}\n");
+    dumpTexTree ("Как говорится в старой пословице: \"Меньше знаешь -- крепче спишь\". Не задумывайтесь о том, что здесь произошло\n");
+}
 
 void texPrintNode (FILE * texfile, node_t * node)
 {
     MY_ASSERT (texfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
 
+
     if (node->left != nullptr && node->right != nullptr)
     {
-        dumpTexTree ("(");
+        if (node->op_t == OP_DIV)
+        {
+            dumpTexTree ("\\frac{");
+        }
+        if (node->op_t == OP_DEG && node->left->type == FUNC_T)
+        {
+            dumpTexTree ("(");
+        }
         texPrintNode (texfile, node->left);
+        if (node->op_t == OP_DEG && node->left->type == FUNC_T)
+        {
+            dumpTexTree (")");
+        }
+        if (node->op_t == OP_DIV)
+        {
+            dumpTexTree ("}");
+        }
     }
 
     switch (node->type)
@@ -943,6 +1024,9 @@ void texPrintNode (FILE * texfile, node_t * node)
             break;
         case FUNC_T:
             texPrintFunc (texfile, node);
+            dumpTexTree ("(");
+            texPrintNode (texfile, node->left);
+            dumpTexTree (")");
             break;
         case CONST_T:
             texPrintConst (texfile, node);
@@ -952,15 +1036,29 @@ void texPrintNode (FILE * texfile, node_t * node)
             break;
     }
 
-    if (node->left != nullptr)
-    {
-        texPrintNode (texfile, node->left);
-        dumpTexTree (")");
-    }
     if (node->right != nullptr)
     {
+        if (node->op_t == OP_DIV)
+        {
+            dumpTexTree ("{");
+        }
+        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
+        {
+            dumpTexTree ("(");
+        }
         texPrintNode (texfile, node->right);
-        dumpTexTree (")");
+        if (node->op_t == OP_DEG)
+        {
+            dumpTexTree ("}");
+        }
+        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
+        {
+            dumpTexTree (")");
+        }
+        if (node->op_t == OP_DIV)
+        {
+            dumpTexTree ("}");
+        }
     }
 }
 
@@ -972,19 +1070,18 @@ void texPrintOperation (FILE * texfile, node_t * node)
     switch (node->op_t)
     {
         case OP_ADD:
-            dumpTexTree (" %c ", OP_ADD);
+            dumpTexTree ("+");
             break;
         case OP_SUB:
             dumpTexTree (" %c ", OP_ADD);
             break;
         case OP_MUL:
-            dumpTexTree (" %c ", OP_MUL);
+            dumpTexTree (" \\cdot ");
             break;
         case OP_DIV:
-            dumpTexTree (" %c ", OP_DIV);
             break;
         case OP_DEG:
-            dumpTexTree (" %c ", OP_DEG);
+            dumpTexTree (" %c{ ", OP_DEG);
             break;
         default:
             printf ("There is no such node\n");
@@ -1026,7 +1123,7 @@ void texPrintConst (FILE * texfile, node_t * node)
 
 int texFinish(FILE * texfile)
 {
-    dumpTexTree("$\n\\end{document}\n");
+    dumpTexTree("\n\\end{document}\n");
 
     fclose(texfile);
 
@@ -1042,4 +1139,297 @@ void selectingNameOfLatexFile (void)
     FILE * latexFile = fopen (nameLatexFile, "w");
     MY_ASSERT (latexFile == nullptr, "There is no access to LaTeX file");
 }
+//---------------------------------------------------------------------------------------------------------------------------------
+
+//-------------------------------------------decompose by the Taylor formula-----------------------------------------------------
+
+void decomposeByTaylor (node_t * node, FILE * texfile, char varInEquation)
+{
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+    node_t * copyHeadNode = copyNode (node);
+
+    int degree = 0;
+    printf ("Specify the degree to which you want to decompose the function\n");
+
+    degree = checkInput (&degree);
+    printf ("%d\n", degree);
+
+    node_t ** arrDerivatives = (node_t **) calloc (degree+1, sizeof(node_t *));
+    fillArrOfNodes (copyHeadNode, arrDerivatives, degree);
+
+    resetVar (copyHeadNode);
+    simplifyExpression (&copyHeadNode);
+    arrDerivatives[degree] = copyHeadNode;
+
+    dumpTexTree ("Встречайте, разложение по формуле Тейлора в точке 0!\n");
+    startEquation (texfile, varInEquation);
+
+    for (int i = degree, j = 0; i >= 0; i--, j++)
+    {
+        dumpTexTree ("\\frac{");
+        texPrintNode (texfile, arrDerivatives[i]);
+        if (i != 0)
+        {
+            dumpTexTree ("}{%d!}\\cdot %c^{%d} + ", j, varInEquation, j);
+        }
+        else
+        {
+            dumpTexTree ("}{%d!}\\cdot %c", j, varInEquation);
+        }
+    }
+
+    endEquation (texfile);
+}
+
+int checkInput (int * degreeOfNum)
+{
+    MY_ASSERT (degreeOfNum == nullptr, "There is no access to this number");
+
+    int enterSymbols = scanf (" %d", degreeOfNum);
+    while (getchar() != '\n');
+
+    if (enterSymbols == 0 || *degreeOfNum < 0)
+    {
+        printf ("Please, enter a positive number\n");
+        return checkInput (degreeOfNum);
+    }
+
+    return *degreeOfNum;
+}
+
+void fillArrOfNodes (node_t * node, node_t ** arrNodes, int n)
+{
+    if (n > 0)
+    {
+        node = getGrammarForDif (node);
+        simplifyExpression (&node);
+
+        fillArrOfNodes (node, arrNodes, n-1);
+
+        resetVar (node);
+        simplifyExpression (&node);
+
+        arrNodes[n-1] = node;
+    }
+}
+
+void resetVar (node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    if (node->type == VAR_T)
+    {
+        node->type = NUM_T;
+        node->varName = 0;
+        node->elem = 0;
+    }
+
+    if (node->left != nullptr)
+    {
+        resetVar (node->left);
+    }
+    if (node->right != nullptr)
+    {
+        resetVar (node->right);
+    }
+}
+
+char saveVar (const node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    if (node->type == VAR_T)
+    {
+        return node->varName;
+    }
+
+    if (node->left != nullptr)
+    {
+        return saveVar (node->left);
+    }
+    if (node->right != nullptr)
+    {
+        return saveVar (node->right);
+    }
+    return 0;
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------
+
+//-------------------------------------------------build a graph using python------------------------------------------------------
+
+void buildGraph (node_t * node, FILE * texfile)
+{
+    FILE * pyfile = fopen("plot.py", "w\n");
+    setbuf (pyfile, nullptr);
+
+    int leftX = 0;
+    int rightX = 0;
+
+    leftX = checkInput (&leftX);
+    rightX = checkInput (&rightX);
+
+    dumpPython ("import numpy as np\n");
+    dumpPython ("import matplotlib.pyplot as plt\n");
+    dumpPython ("x = np.linspace(%d, %d, 200)\n", leftX, rightX);
+    dumpPython ("y = ");
+    pyPrintNode (pyfile, node);
+    dumpPython ("\n");
+
+    dumpPython ("plt.figure(figsize=(8,6), dpi=100)\n");
+    dumpPython ("plt.grid(True, linestyle=\"--\")\n");
+    dumpPython ("plt.axis([%d, %d, np.min(y), np.max(y)])\n", leftX, rightX);
+    dumpPython ("plt.plot(x, y, \"-m\",linewidth=0.5)\n");
+
+    dumpPython ("plt.savefig('plot.png')");
+    fclose (pyfile);
+    system ("python3 plot.py");
+
+    dumpTexTree ("\\begin{figure}[h]\n");
+    dumpTexTree ("\\center{\\includegraphics[width=0.7\\linewidth]{plot.png}}\n");
+    dumpTexTree ("\\caption{Ваша кривая}\n");
+    dumpTexTree ("\\label{ris:image}\n");
+    dumpTexTree ("\\end{figure}\n");
+}
+
+void pyPrintNode (FILE * pyfile, node_t * node)
+{
+    MY_ASSERT (pyfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+
+    if (node->left != nullptr && node->right != nullptr)
+    {
+        if (node->op_t == OP_DIV)
+        {
+            dumpPython ("(");
+        }
+        if (node->op_t == OP_DEG && node->left->type == FUNC_T)
+        {
+            dumpPython ("(");
+        }
+        pyPrintNode (pyfile, node->left);
+        if (node->op_t == OP_DEG && node->left->type == FUNC_T)
+        {
+            dumpPython (")");
+        }
+        if (node->op_t == OP_DIV)
+        {
+            dumpPython (")");
+        }
+    }
+
+    switch (node->type)
+    {
+        case OPER_T:
+            pyPrintOperation (pyfile, node);
+            break;
+        case VAR_T:
+            pyPrintVar (pyfile, node);
+            break;
+        case NUM_T:
+            pyPrintNum (pyfile, node);
+            break;
+        case FUNC_T:
+            pyPrintFunc (pyfile, node);
+            dumpPython ("(");
+            pyPrintNode (pyfile, node->left);
+            dumpPython (")");
+            break;
+        case CONST_T:
+            pyPrintConst (pyfile, node);
+            break;
+        default:
+            fprintf (stderr, "Non-existent node type\n");
+            break;
+    }
+
+    if (node->right != nullptr)
+    {
+        if (node->op_t == OP_DIV)
+        {
+            dumpPython ("(");
+        }
+        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
+        {
+            dumpPython ("(");
+        }
+        pyPrintNode (pyfile, node->right);
+        if (node->op_t == OP_DEG)
+        {
+            dumpPython (")");
+        }
+        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
+        {
+            dumpPython (")");
+        }
+        if (node->op_t == OP_DIV)
+        {
+            dumpPython (")");
+        }
+    }
+}
+
+void pyPrintOperation (FILE * pyfile, node_t * node)
+{
+    MY_ASSERT (pyfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    switch (node->op_t)
+    {
+        case OP_ADD:
+            dumpPython (" %c ", OP_ADD);
+            break;
+        case OP_SUB:
+            dumpPython (" %c ", OP_SUB);
+            break;
+        case OP_MUL:
+            dumpPython (" * ");
+            break;
+        case OP_DIV:
+            break;
+        case OP_DEG:
+            dumpPython (" **( ");
+            break;
+        default:
+            printf ("There is no such node\n");
+            break;
+    }
+}
+
+void pyPrintVar (FILE * pyfile, node_t * node)
+{
+    MY_ASSERT (pyfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    dumpPython ("%c", node->varName);
+}
+
+void pyPrintNum (FILE * pyfile, node_t * node)
+{
+    MY_ASSERT (pyfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    dumpPython ("%.2lf", node->elem);
+}
+
+void pyPrintFunc (FILE * pyfile, node_t * node)
+{
+    MY_ASSERT (pyfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    dumpPython ("np.%s", node->nameFunc);
+}
+
+void pyPrintConst (FILE * pyfile, node_t * node)
+{
+    MY_ASSERT (pyfile == nullptr, "There is no access to this file");
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    dumpPython ("%c", node->varName);
+}
+
+
+//--------------------------------------------------------------------------------------------------------------------------------
+
 

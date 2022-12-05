@@ -3,26 +3,31 @@
 
 int main (void)
 {
-    FILE * logFile = fopen ("log.txt", "a");
+    FILE * texfile = openTexfile ();
 
     node_t * firstNode = getGrammar ();
-    graphicDumpTree (firstNode);
 
     simplifyExpression (&firstNode);
     graphicDumpTree (firstNode);
 
+    char var = saveVar (firstNode);
+
     node_t * difNode = getGrammarForDif (firstNode);
-    graphicDumpTree (difNode);
 
     simplifyExpression (&difNode);
-    graphicDumpTree (difNode);
 
-    graphicDumpTree (difNode);
-    dumpToTexFile (difNode);
+    texStart (texfile);
+    startEquation (texfile, var);
+    texPrintNode (texfile, firstNode);
+    endEquation (texfile);
 
-    graphicDumpTree (firstNode);
-    dumpToTexFile (firstNode);
+    startDifEquation (texfile, var);
+    texPrintNode (texfile, difNode);
+    endEquation (texfile);
 
+    decomposeByTaylor (firstNode, texfile, var);
 
+    buildGraph (firstNode, texfile);
 
+    texFinish (texfile);
 }

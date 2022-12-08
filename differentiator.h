@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <math.h>
+#include <string.h>
 #include "tree.h"
 
 enum IS_LAST {
@@ -37,16 +38,11 @@ node_t * getDegree (char ** str);
 node_t * getBracket (char ** str);
 node_t * getNumber (char ** str);
 void deleteNode (node_t * node);
+void deleteTree (node_t * node);
 
-//--------------------------------------------------------------------------------------------------------------
-
-//---------------------------------------------dump to console--------------------------------------------------
-void textDump (node_t * node, FILE * log, unsigned int isLast, unsigned int numTABs);
-void printfTab (unsigned int numTABs, FILE * log);
 //--------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------support functions---------------------------------------------------------
-int numOfLetters (const char * string);
 FILE * openTexfile (void);
 //---------------------------------------------------------------------------------------------------------------------------------
 

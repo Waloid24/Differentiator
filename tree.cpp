@@ -1,8 +1,21 @@
 #include "tree.h"
 
+#define dumplineTree(text, ...)\
+		fprintf (graphicDump, text, ##__VA_ARGS__)
+
+//--------------------------------------------graphical tree dump-------------------------------------------------
+static void dotFileHeaderForTree (const node_t * node, const char * nameDotFileTree);
+static void writeNodeToDotFile (const node_t * node, FILE * graphicDump);
+static void writeEdgeToDotFile (const node_t * node, FILE * graphicDump);
+static void createDotFileTree (const char * nameDotFile, unsigned int timesCreatePicture);
+static void createHtmlFileTree(const char * nameFileDump, unsigned int * timesCreatePicture);
+//----------------------------------------------------------------------------------------------------------------
+
 static unsigned int	NUMBER_GRAPHICAL_TREE_DUMPS = 0;
 
 //-------------------------------------------------------------building a tree-------------------------------------------------------
+
+//TODO: написать функцию удаления дерева
 
 node_t * createNodeWithNum (elem_t num)
 {
@@ -23,10 +36,13 @@ node_t * createNodeWithOperation (enum operationType operation, node_t * valLeft
 	node_t * node = (node_t *) calloc (1, sizeof(node_t));
 	MY_ASSERT (node == nullptr, "Unable to allocate new memory");
 
-	if (operation != OP_SUB && operation != OP_ADD && operation != OP_DIV && operation != OP_MUL && operation != OP_DEG)
+	if (operation != OP_SUB &&
+		operation != OP_ADD &&
+		operation != OP_DIV &&
+		operation != OP_MUL &&
+		operation != OP_DEG)
 	{
-		printf ("Incorrect operation type specified\n");
-		return nullptr;
+		MY_ASSERT (1, "Incorrect operation type specified");
 	}
 
 	node->left = valLeftNode;
@@ -51,19 +67,9 @@ node_t * createNodeWithVariable (char variableName)
 	return node;
 }
 
-node_t * createNodeWithConst (char variableName)
-{
-	node_t * node = (node_t *) calloc (1, sizeof(node_t));
-	MY_ASSERT (node == nullptr, "Unable to allocate new memory");
-
-	node->type = CONST_T;
-	node->varName = variableName;
-
-	return node;
-}
-
 node_t * createNodeWithFunction (char * nameFunction)
 {
+	// TODO: remove copy-paste
 	if (myStrcmp ((const char *) nameFunction, "sin") == 0)
 	{
 		node_t * node = (node_t *) calloc (1, sizeof(node_t));
@@ -71,6 +77,7 @@ node_t * createNodeWithFunction (char * nameFunction)
 
 		node->type = FUNC_T;
 		node->nameFunc = (char *) "sin";
+		// strdup() or nameFunc - const char*
 		return node;
 	}
 	else if (myStrcmp ((const char *) nameFunction, "cos") == 0)
@@ -111,7 +118,7 @@ node_t * createNodeWithFunction (char * nameFunction)
 	}
 	else
 	{
-		printf ("Incorrect function name\n");
+		MY_ASSERT (1, "Incorrect function name");
 		return nullptr;
 	}
 }
@@ -150,12 +157,12 @@ void graphicDumpTree (const node_t * node)
     const char * dotFileTree = "treeGraphviz.dot";
 	const char * htmlFileTree = "treeGraphviz.html";
 
-	dotFileHeaderTree	(node, dotFileTree);
+	dotFileHeaderForTree	(node, dotFileTree);
 	createDotFileTree	(dotFileTree, NUMBER_GRAPHICAL_TREE_DUMPS);
 	createHtmlFileTree	(htmlFileTree, &NUMBER_GRAPHICAL_TREE_DUMPS);
 }
 
-void dotFileHeaderTree (const node_t * node, const char * nameDotFileTree)
+void dotFileHeaderForTree (const node_t * node, const char * nameDotFileTree)
 {
 	MY_ASSERT (node == nullptr, "There is no access to tree");
 
@@ -170,10 +177,8 @@ void dotFileHeaderTree (const node_t * node, const char * nameDotFileTree)
 	// dumplineTree ("  edge[minlen = 3, penwidth = 3];\n");
     dumplineTree ("  node[shape = record];\n\n");
 
-
 	writeNodeToDotFile (node, graphicDump);
 	writeEdgeToDotFile (node, graphicDump);
-
 
 	dumplineTree ("}\n");
 
@@ -196,7 +201,7 @@ void writeNodeToDotFile (const node_t * node, FILE * graphicDump)
 	}
 	else if (node->type == NUM_T)
 	{
-		dumplineTree ("\t node%p [label=\"{ %lf | %p }\"];\n", node, node->elem, node); //| [style = filled, color = black, fillcolor = orange]
+		dumplineTree ("\t node%p [label=\"{ %lf | %p }\"];\n", node, node->elem, node);
 	}
 	else
 	{

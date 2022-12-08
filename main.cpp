@@ -8,7 +8,6 @@ int main (void)
     node_t * firstNode = getGrammar ();
 
     simplifyExpression (&firstNode);
-    graphicDumpTree (firstNode);
 
     char var = saveVar (firstNode);
 
@@ -30,4 +29,8 @@ int main (void)
     buildGraph (firstNode, texfile);
 
     texFinish (texfile);
+
+    deleteTree (firstNode);
+    deleteTree (difNode);
+
 }

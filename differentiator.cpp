@@ -59,61 +59,69 @@ static const char * TEX_TITLE_PAGE =
 
 //-------------------------------------------------------------building a tree-------------------------------------------------------
 
+// TODO recursive?
 void removeSpaces (char * dest, const char * source)
 {
     while (*source != '\0')
     {
-        if (*source == ' ')
+        if (*source == ' ' || *source == '\t')
         {
             source++;
             removeSpaces(dest, source);
         }
         else
         {
-        *dest = *source;
-        dest++;
-        source++;
+            *dest = *source;
+            dest++;
+            source++;
         }
     }
 }
 
+// TODO: Parser should not ask for expression
 node_t * getGrammar (void)
 {
     printf ("Enter the expression\n");
     char * string = (char *) calloc (50, sizeof(char));
     char * strFixed = (char *) calloc (50, sizeof(char));
+    char * saveStrFixed = strFixed;
 
     fgets (string, 50, stdin);
 
     removeSpaces (strFixed, string);
 
     node_t * firstNode = getExpression(&strFixed);
-    if (*strFixed == '\0')
-    {
-        printf ("Fucking hands, they didn't write the expression again\n");
-        return firstNode;
-    }
+
+    MY_ASSERT (*strFixed == '\0', "The processing line is empty");
+    free (string);
+    free (saveStrFixed);
     return firstNode;
 }
 
 node_t * getExpression (char ** str)
 {
     node_t * leftNode = getT (str);
-    while (**str == '+' || **str == '-')
+    while (1)
     {
-        char op = **str;
-        (*str)++;
-        node_t * rightNode = getT (str);
-
-        if (op == '+')
+        operationType op = OP_ERROR;
+        if (**str == '+')
         {
+            op = OP_ADD;
+            (*str)++;
+            node_t * rightNode = getT (str);
             leftNode = createNodeWithOperation (OP_ADD, leftNode, rightNode);
+        }
+        else if (**str == '-')
+        {
+            op = OP_SUB;
+            (*str)++;
+            node_t * rightNode = getT (str);
+            leftNode = createNodeWithOperation (OP_SUB, leftNode, rightNode);
         }
         else
         {
-            leftNode = createNodeWithOperation (OP_SUB, leftNode, rightNode);
+            break;
         }
-
     }
     return leftNode;
 }
@@ -160,10 +168,6 @@ node_t * getBracket (char ** str)
     {
         (*str)++;
         val = getExpression (str);
-        if (**str == '(')
-        {
-            printf ("*(s+1) = %c\n", *(*str+1));
-        }
         (*str)++;
     }
     else
@@ -178,8 +182,9 @@ node_t * getNumber (char ** str)
     if (isalpha(**str))
     {
         char buf[10] = "";
-        sscanf (*str, "%[a-z]", buf);
-        int wordLength = numOfLetters (buf);
+        sscanf (*str, "%[a-z]", buf); // TODO: not his work!!!
+        int wordLength = strlen (buf);
+        printf ("wordLength = %d\n", wordLength);
 
         MY_ASSERT (wordLength == 0, "Failed line reading");
         (*str) = (*str)+wordLength;
@@ -189,12 +194,12 @@ node_t * getNumber (char ** str)
         }
         else
         {
-            if (myStrcmp ((const char *) buf, "ln") == 0)
-            {
-                buf[0] = 'l';
-                buf[1] = 'n';
-                buf[2] = '\0';
-            }
+            // if (myStrcmp ((const char *) buf, "ln") == 0)
+            // {
+            //     buf[0] = 'l';
+            //     buf[1] = 'n'; // TODO: ?????
+            //     buf[2] = '\0';
+            // }
             printf ("buf = %s\n", buf);
             node_t * function = createNodeWithFunction (buf);
             node_t * followingExpression = getBracket (str);
@@ -217,6 +222,7 @@ node_t * getNumber (char ** str)
     {
         int val = 0;
         const char * sOld = *str;
+        // atoi? No, because you have to move your pointer in the line.
         while ('0' <= **str && **str <= '9')
         {
             val = val*10 + **str - '0';
@@ -228,70 +234,11 @@ node_t * getNumber (char ** str)
 }
 //----------------------------------------------------------------------------------------------------------------------------------
 
-
-//---------------------------------------------dump to console----------------------------------------------------------------------
-
-void textDump (node_t * node, FILE * log, unsigned int isLast, unsigned int numTABs)
-{
- 	MY_ASSERT (node == nullptr, "There is no access to the node of the tree");
-	MY_ASSERT (log == nullptr, "There is no access to the logfile");
-
-	printfTab (numTABs, log);
-	if (isLast == NO_LAST)
-	{
-		fprintf (log, "%lf\n", node->elem);
-		if (node->left->left == nullptr && node->left->right == nullptr)
-		{
-			textDump (node->left, log, LAST, ++numTABs);
-		}
-		else
-		{
-			textDump (node->left, log, NO_LAST, ++numTABs);
-		}
-
-		if (node->right->left == nullptr && node->right->right == nullptr)
-		{
-			textDump (node->right, log, LAST, numTABs);
-		}
-		else
-		{
-			textDump (node->right, log, NO_LAST, numTABs);
-		}
-	}
-	else
-		fprintf (log, ".%lf\n", node->elem);
-}
-
-void printfTab (unsigned int numTABs, FILE * log)
-{
-	MY_ASSERT (log == nullptr, "There is no access to the logfile");
-
-	for (unsigned int i = 0; i < numTABs; i++)
-	{
-		fprintf (log, "  ");
-	}
-}
-
-//----------------------------------------------------------------------------------------------------------------------------------
-
 //-------------------------------------------------------support functions---------------------------------------------------------
-int numOfLetters (const char * string)
-{
-    MY_ASSERT (string == nullptr, "There is no access to string");
-
-    int number = 0;
-
-    while (*string != '\0')
-    {
-        number++;
-        string++;
-    }
-    return number;
-}
 
 FILE * openTexfile (void)
 {
-    FILE * texfile = fopen ("log.txt", "a");
+    FILE * texfile = fopen ("Derivative.tex", "w"); // TODO: hardcoded file
     MY_ASSERT (texfile == nullptr, "There is no access to logfile");
     setbuf (texfile, nullptr);
 
@@ -304,6 +251,9 @@ void simplifyExpression (node_t ** node)
 {
     for (int i = 0; i < 3; i++)
     {
+        printf (">>> in simplifyExpression (%d)\n", i);
+        graphicDumpTree (*node);
+
         removeConstants (node);
 
         simplifyDegOrDivToOne (node);
@@ -365,7 +315,7 @@ void removeConstants (node_t ** node)
         }
         else
         {
-            printf ("Mistake! There is no such operation\n");
+            MY_ASSERT (1, "There is no such operation");
         }
     }
     if (((*node)->left != nullptr) && ((*node)->left->left != nullptr) && ((*node)->left->right != nullptr) &&
@@ -414,13 +364,16 @@ void removeConstants (node_t ** node)
         }
         else
         {
-            printf ("Mistake! There is no such operation\n");
+            MY_ASSERT (1, "There is no such operation");
         }
     }
-    if (((*node)->right != nullptr) && ((*node)->right->left != nullptr) && ((*node)->right->right != nullptr) &&
-            ((*node)->right->left->type == NUM_T) && ((*node)->right->right->type == NUM_T) && ((*node)->right->type == OPER_T))
+    if (((*node)->right != nullptr) && ((*node)->right->left != nullptr) &&
+        ((*node)->right->right != nullptr) && ((*node)->right->left->type == NUM_T) &&
+        ((*node)->right->right->type == NUM_T) && ((*node)->right->type == OPER_T))
     {
         node_t * newNode = createNodeWithNum (1);
+
+        // COPYPASTE!!!!!!
         if ((*node)->right->op_t == OP_ADD)
         {
             newNode->elem = (*node)->right->left->elem + (*node)->right->right->elem;
@@ -455,7 +408,6 @@ void removeConstants (node_t ** node)
         }
         else if ((*node)->right->op_t == OP_DEG)
         {
-            printf ("Here!\n");
             newNode->elem = pow ((*node)->right->left->elem, (*node)->right->right->elem);
             deleteNode ((*node)->right->left);
             deleteNode ((*node)->right->right);
@@ -464,7 +416,7 @@ void removeConstants (node_t ** node)
         }
         else
         {
-            printf ("Mistake! There is no such operation\n");
+            MY_ASSERT (1, "There is no such operation\n");
         }
     }
     if ((*node)->left != nullptr)
@@ -482,7 +434,8 @@ void simplifyDegOrDivToOne (node_t ** node)
     MY_ASSERT (node == nullptr, "There is no access to node for simplify");
     MY_ASSERT ((*node) == nullptr, "There is no access to node for simplify");
 
-    if (((*node)->op_t == OP_DIV || (*node)->op_t == OP_DEG) && ((*node)->left != nullptr) && (compareFractionalNum((*node)->right->elem, 1) == 1))
+    if (((*node)->op_t == OP_DIV || (*node)->op_t == OP_DEG) &&
+        ((*node)->left != nullptr) && (compareFractionalNum((*node)->right->elem, 1) == 1))
     {
         node_t * saveLeftNode = (*node)->left;
 
@@ -609,7 +562,7 @@ void simplifyAddWithZero (node_t ** node)
         if (((*node)->right != nullptr) && ((*node)->right->type == NUM_T) && (compareFractionalNum((*node)->right->elem, 0) == 1))
         {
             deleteNode ((*node)->right);
-            (*node)->right = nullptr; //!!!!!!!!!!!!
+            (*node)->right = nullptr;
             node_t * newNode = copyNode ((*node)->left);
             MY_ASSERT (newNode == nullptr, "The left node cannot be copied");
             (*node) = newNode;
@@ -617,7 +570,7 @@ void simplifyAddWithZero (node_t ** node)
         if (((*node)->left != nullptr) && ((*node)->left->type == NUM_T) && (compareFractionalNum((*node)->left->elem, 0) == 1))
         {
             deleteNode ((*node)->left);
-            (*node)->left = nullptr; //!!!!!!!!!!!! чтобы упрощать такой случай, нужно передать двойной указатель и работать с ним тут
+            (*node)->left = nullptr;
             node_t * newNode = copyNode ((*node)->right);
             MY_ASSERT (newNode == nullptr, "The left node cannot be copied");
             (*node) = newNode;
@@ -649,6 +602,7 @@ void simplifyAddWithZero (node_t ** node)
             if (((*node)->right->right != nullptr) && ((*node)->right->right->type == NUM_T) && (compareFractionalNum((*node)->right->right->elem, 0) == 1))
             {
                 node_t * saveNodeRightLeft = (*node)->right->left;
+
                 deleteNode ((*node)->right->right);
                 deleteNode ((*node)->right);
 
@@ -657,6 +611,7 @@ void simplifyAddWithZero (node_t ** node)
             if (((*node)->right->left != nullptr) && ((*node)->right->left->type == NUM_T) && (compareFractionalNum((*node)->right->left->elem, 0) == 1))
             {
                 node_t * saveNodeRightRight = (*node)->right->right;
+
                 deleteNode ((*node)->right->left);
                 deleteNode ((*node)->right);
 
@@ -689,7 +644,7 @@ void simplifyMulByZero (node_t * node)
         node->elem = 0;
         node->left = nullptr;
         node->right = nullptr;
-        node->op_t = WITHOUT_OP;
+        node->op_t = OP_ERROR;
         node->type = NUM_T;
     }
     else
@@ -697,8 +652,8 @@ void simplifyMulByZero (node_t * node)
         if ((node->left != nullptr) && (node->left->op_t == OP_MUL) &&
             (node->left->right->type == NUM_T) && (compareFractionalNum(node->left->right->elem, 0) == 1))
         {
-            deleteNode (node->left->right);
-            deleteNode (node->left);
+            deleteTree (node->left->right);
+            deleteTree (node->left);
 
             node_t * newNode = createNodeWithNum (0);
             node->left = newNode;
@@ -706,8 +661,8 @@ void simplifyMulByZero (node_t * node)
         else if ((node->right != nullptr) && (node->right->op_t == OP_MUL) &&
                 (node->right->right->type == NUM_T) && (compareFractionalNum(node->right->right->elem, 0) == 1))
         {
-            deleteNode (node->right->right);
-            deleteNode (node->right);
+            deleteTree (node->right->right);
+            deleteTree (node->right);
 
             node_t * newNode = createNodeWithNum (0);
             node->right = newNode;
@@ -746,13 +701,9 @@ void deleteNode (node_t * node)
 }
 
 //--------------------------------------------creating a tree after differentiation------------------------------------------------
-node_t * getGrammarForDif (node_t * node) //возможно, когда сделаешь двойной указатель, потом начнешь вылезать за строку из-за сдвига
+node_t * getGrammarForDif (node_t * node)
 {
     MY_ASSERT (node == nullptr, "There is no access to the node");
-
-    // node_t * copyHeadNode = copyNode (node);
-    // printf ("dump for getGrammarForDif: copyHeadNode = %p, node = %p\n", copyHeadNode, node);
-    // graphicDumpTree (copyHeadNode);
 
     node_t * firstNode = getExpressionForDif(node);
 
@@ -883,8 +834,8 @@ node_t * difNumberOrVar (node_t * node)
     }
     else
     {
-        printf ("Error\n");
-        return node;
+        MY_ASSERT (1, "Wrong type");
+        return nullptr;
     }
 }
 
@@ -896,7 +847,6 @@ node_t * difFunc (node_t * node)
     {
         node_t * unit = createNodeWithNum (1);
         node_t * copyArgument = copyNode (node->left);
-        // node_t * copyForRightDescendant = copyNode (node->left);
         node_t * leftDescendant = createNodeWithOperation (OP_DIV, unit, copyArgument);
         node_t * rightDescendant = getExpressionForDif (node->left);
         node_t * headNode = createNodeWithOperation (OP_MUL, leftDescendant, rightDescendant);
@@ -908,7 +858,6 @@ node_t * difFunc (node_t * node)
     {
         node_t * leftDescendant = createNodeWithFunction ((char *) "cos");
         node_t * copyArgument = copyNode (node->left);
-        // node_t * copyForRightDescendant = copyNode (node->left);
         leftDescendant->left = copyArgument;
         copyArgument->parent = leftDescendant;
         node_t * rightDescendant = getExpressionForDif (node->left);
@@ -1138,6 +1087,8 @@ void selectingNameOfLatexFile (void)
 
     FILE * latexFile = fopen (nameLatexFile, "w");
     MY_ASSERT (latexFile == nullptr, "There is no access to LaTeX file");
+
+    free (nameLatexFile);
 }
 //---------------------------------------------------------------------------------------------------------------------------------
 
@@ -1146,11 +1097,12 @@ void selectingNameOfLatexFile (void)
 void decomposeByTaylor (node_t * node, FILE * texfile, char varInEquation)
 {
     MY_ASSERT (node == nullptr, "There is no access to this node");
+
     node_t * copyHeadNode = copyNode (node);
 
     int degree = 0;
-    printf ("Specify the degree to which you want to decompose the function\n");
 
+    printf ("Specify the degree to which you want to decompose the function\n");
     degree = checkInput (&degree);
     printf ("%d\n", degree);
 
@@ -1179,6 +1131,9 @@ void decomposeByTaylor (node_t * node, FILE * texfile, char varInEquation)
     }
 
     endEquation (texfile);
+
+    deleteTree (copyHeadNode);
+    free (arrDerivatives);
 }
 
 int checkInput (int * degreeOfNum)
@@ -1269,6 +1224,7 @@ void buildGraph (node_t * node, FILE * texfile)
     leftX = checkInput (&leftX);
     rightX = checkInput (&rightX);
 
+    //TODO: WRITE SCRIPT WITH ARGUMENTS)
     dumpPython ("import numpy as np\n");
     dumpPython ("import matplotlib.pyplot as plt\n");
     dumpPython ("x = np.linspace(%d, %d, 200)\n", leftX, rightX);
@@ -1432,4 +1388,19 @@ void pyPrintConst (FILE * pyfile, node_t * node)
 
 //--------------------------------------------------------------------------------------------------------------------------------
 
+void deleteTree (node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to this tree");
+
+    if (node->left != nullptr)
+    {
+        deleteTree (node->left);
+    }
+    if (node->right != nullptr)
+    {
+        deleteTree (node->right);
+    }
+
+    free(node);
+}
 

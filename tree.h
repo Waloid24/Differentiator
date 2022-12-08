@@ -6,9 +6,6 @@
 #include <ctype.h>
 #include "my_assert.h"
 
-#define dumplineTree(text, ...)\
-		fprintf (graphicDump, text, ##__VA_ARGS__)
-
 enum nodeType {
     OPER_T          = 1,
     VAR_T           = 2,
@@ -18,7 +15,7 @@ enum nodeType {
 };
 
 enum operationType {
-    WITHOUT_OP      = 0,
+    OP_ERROR      = 0, // OP_...
     OP_ADD          = '+',
     OP_SUB          = '-',
     OP_MUL          = '*',
@@ -26,17 +23,17 @@ enum operationType {
     OP_DEG          = '^'
 };
 
-enum createNode {
-    RIGHT = 1,
-    LEFT = 2,
-    FIRST = 3
-};
-
 typedef double elem_t;
+
+// typedef struct
+// {
+//     myStruct* structPtr;
+//
+// } myStruct;
 
 struct nodeTree {
     struct nodeTree * parent;
-    elem_t elem;
+    elem_t elem; // TODO: elem but its only one of element types
     char varName;
     char * nameFunc;
     struct nodeTree * left;
@@ -44,26 +41,29 @@ struct nodeTree {
 
     enum nodeType type;
     enum operationType op_t;
+
+    // TODO: nodeType type;
+    // union
+    // {
+    //     op
+    //     var
+    //     ...
+    // } elem;
 };
 
+// TODO: unite with struct declaration
 typedef struct nodeTree node_t;
 
 //-----------------------------------------------create nodes----------------------------------------------------
 node_t * createNodeWithNum (elem_t num);
 node_t * createNodeWithOperation (enum operationType operation, node_t * valLeftNode, node_t * valRightNode);
-node_t * createNodeWithVariable (char variableName);
-node_t * createNodeWithConst (char variableName);
+node_t * createNodeWithVariable (char nameOfVar);
 node_t * createNodeWithFunction (char * nameFunction);
 node_t * copyNode (node_t * nodeForCopy);
 //---------------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------graphical tree dump-------------------------------------------------
 void graphicDumpTree (const node_t * node);
-void dotFileHeaderTree (const node_t * node, const char * nameDotFileTree);
-void writeNodeToDotFile (const node_t * node, FILE * graphicDump);
-void writeEdgeToDotFile (const node_t * node, FILE * graphicDump);
-void createDotFileTree (const char * nameDotFile, unsigned int timesCreatePicture);
-static void createHtmlFileTree(const char * nameFileDump, unsigned int * timesCreatePicture);
 //----------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------support functions---------------------------------------------------------

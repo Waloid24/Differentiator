@@ -1,5 +1,7 @@
 #include "differentiator.h"
 
+static var_t findNameVar (const node_t * node);
+
 #define dumpTexTree(text, ...)\
     fprintf (texfile, text, ##__VA_ARGS__)
 
@@ -47,7 +49,7 @@ static const char * TEX_TITLE_PAGE =
     "\\vspace{5cm}\n"
     "\\Large Лабораторная работа № 1.3.1\\\\ \n"
     "\\vspace{2cm}\n"
-    "\\textbf{\Huge <<Определение модуля Юнга на основе исследования деформаций растяжения и изгиба>>}\\\\ \n"
+    "\\textbf{\\Huge <<Дифференцируем в уме (почти)>>}\\\\ \n"
     "\\end{center}\n"
 
     "\\vspace{8cm}\n"
@@ -55,45 +57,34 @@ static const char * TEX_TITLE_PAGE =
     "}"
 "\\end{titlepage}\n\n";
 
-
+static char * readExpression (void);
+static char * readString (char ** str);
 
 //-------------------------------------------------------------building a tree-------------------------------------------------------
 
-// TODO recursive?
 void removeSpaces (char * dest, const char * source)
 {
     while (*source != '\0')
     {
-        if (*source == ' ' || *source == '\t')
+        while (*source == ' ' || *source == '\t')
         {
             source++;
-            removeSpaces(dest, source);
         }
-        else
-        {
-            *dest = *source;
-            dest++;
-            source++;
-        }
+        *dest = *source;
+        dest++;
+        source++;
     }
 }
 
-// TODO: Parser should not ask for expression
 node_t * getGrammar (void)
 {
-    printf ("Enter the expression\n");
-    char * string = (char *) calloc (50, sizeof(char));
-    char * strFixed = (char *) calloc (50, sizeof(char));
+    char * strFixed = readExpression ();
+    printf ("strFixed = %s\n", strFixed);
     char * saveStrFixed = strFixed;
-
-    fgets (string, 50, stdin);
-
-    removeSpaces (strFixed, string);
-
     node_t * firstNode = getExpression(&strFixed);
 
     MY_ASSERT (*strFixed == '\0', "The processing line is empty");
-    free (string);
+
     free (saveStrFixed);
     return firstNode;
 }
@@ -177,30 +168,26 @@ node_t * getBracket (char ** str)
     return val;
 }
 
+
+
 node_t * getNumber (char ** str)
 {
     if (isalpha(**str))
     {
-        char buf[10] = "";
-        sscanf (*str, "%[a-z]", buf); // TODO: not his work!!!
-        int wordLength = strlen (buf);
-        printf ("wordLength = %d\n", wordLength);
+        char * buf = readString (str);
 
+        int wordLength = strlen (buf);
+        printf (">> getNumber: buf (%d) = %s\n", wordLength, buf);
         MY_ASSERT (wordLength == 0, "Failed line reading");
         (*str) = (*str)+wordLength;
+
         if (wordLength == 1)
         {
+            // printf ("buf[0] = %c, buf[1] = %c\n", buf[0], buf[1]);
             return (createNodeWithVariable (buf[0]));
         }
         else
         {
-            // if (myStrcmp ((const char *) buf, "ln") == 0)
-            // {
-            //     buf[0] = 'l';
-            //     buf[1] = 'n'; // TODO: ?????
-            //     buf[2] = '\0';
-            // }
-            printf ("buf = %s\n", buf);
             node_t * function = createNodeWithFunction (buf);
             node_t * followingExpression = getBracket (str);
             function->right = nullptr;
@@ -209,6 +196,7 @@ node_t * getNumber (char ** str)
 
             return (function);
         }
+        free (buf);
     }
     else if (**str == '-' && isalnum(*(*str+1)))
     {
@@ -222,7 +210,6 @@ node_t * getNumber (char ** str)
     {
         int val = 0;
         const char * sOld = *str;
-        // atoi? No, because you have to move your pointer in the line.
         while ('0' <= **str && **str <= '9')
         {
             val = val*10 + **str - '0';
@@ -236,13 +223,38 @@ node_t * getNumber (char ** str)
 
 //-------------------------------------------------------support functions---------------------------------------------------------
 
-FILE * openTexfile (void)
+FILE * openFile (char * nameFile)
 {
-    FILE * texfile = fopen ("Derivative.tex", "w"); // TODO: hardcoded file
+    printf (">> in openFile: nameFile = %s\n", nameFile);
+    FILE * texfile = fopen (nameFile, "w");
     MY_ASSERT (texfile == nullptr, "There is no access to logfile");
     setbuf (texfile, nullptr);
 
     return texfile;
+}
+static char * readExpression (void)
+{
+    printf ("Enter the expression\n");
+    char * string = (char *) calloc (50, sizeof(char));
+    MY_ASSERT (string == nullptr, "Unable to allocate new memory");
+    char * strFixed = (char *) calloc (50, sizeof(char));
+    MY_ASSERT (strFixed == nullptr, "Unable to allocate new memory");
+
+    fgets (string, 50, stdin);
+
+    removeSpaces (strFixed, string);
+
+    free (string);
+    return strFixed;
+}
+static char * readString (char ** str)
+{
+    MY_ASSERT (str == nullptr, "There is no access to this string");
+
+    char * buf = (char *) calloc (10, sizeof(char));
+    sscanf (*str, "%[a-z]", buf);
+
+    return buf;
 }
 //---------------------------------------------------------------------------------------------------------------------------------
 
@@ -251,17 +263,10 @@ void simplifyExpression (node_t ** node)
 {
     for (int i = 0; i < 3; i++)
     {
-        printf (">>> in simplifyExpression (%d)\n", i);
-        graphicDumpTree (*node);
-
         removeConstants (node);
-
         simplifyDegOrDivToOne (node);
-
         simplifyMulByZero (*node);
-
         simplifyAddWithZero (node);
-
         simplifyMulByOne (node);
     }
 }
@@ -480,7 +485,8 @@ void simplifyMulByOne (node_t ** node)
     MY_ASSERT (node == nullptr, "There is no access to node for simplify");
     MY_ASSERT ((*node) == nullptr, "There is no access to node for simplify");
 
-    if (((*node)->op_t == OP_MUL) && (((*node)->right != nullptr) ) && (compareFractionalNum((*node)->right->elem, 1) == 1))
+    if (((*node)->op_t == OP_MUL) && (((*node)->right != nullptr) ) &&
+        (compareFractionalNum((*node)->right->elem, 1) == 1))
     {
         node_t * saveLeftNode = (*node)->left;
 
@@ -489,7 +495,8 @@ void simplifyMulByOne (node_t ** node)
 
         (*node) = saveLeftNode;
     }
-    if (((*node)->op_t == OP_MUL) && ((*node)->left != nullptr) && (compareFractionalNum((*node)->left->elem, 1) == 1))
+    if (((*node)->op_t == OP_MUL) && ((*node)->left != nullptr) &&
+        (compareFractionalNum((*node)->left->elem, 1) == 1))
     {
         node_t * saveRightNode = (*node)->right;
 
@@ -501,7 +508,8 @@ void simplifyMulByOne (node_t ** node)
 
     if (((*node)->left != nullptr) && ((*node)->left->op_t == OP_MUL))
     {
-        if (((*node)->left->right != nullptr) && compareFractionalNum((*node)->left->right->elem, 1) == 1)
+        if (((*node)->left->right != nullptr) &&
+            compareFractionalNum((*node)->left->right->elem, 1) == 1)
         {
             node_t * saveNodeLeftLeft = (*node)->left->left;
 
@@ -510,7 +518,8 @@ void simplifyMulByOne (node_t ** node)
 
             (*node)->left = saveNodeLeftLeft;
         }
-        if (((*node)->left->left != nullptr) && (compareFractionalNum((*node)->left->left->elem, 1) == 1))
+        if (((*node)->left->left != nullptr) &&
+            (compareFractionalNum((*node)->left->left->elem, 1) == 1))
         {
             node_t * saveNodeLeftRight = (*node)->left->right;
 
@@ -522,7 +531,8 @@ void simplifyMulByOne (node_t ** node)
     }
     if (((*node)->right != nullptr) && ((*node)->right->op_t == OP_MUL))
     {
-        if (((*node)->right->right != nullptr) && (compareFractionalNum((*node)->right->right->elem, 1) == 1))
+        if (((*node)->right->right != nullptr) &&
+            (compareFractionalNum((*node)->right->right->elem, 1) == 1))
         {
             node_t * saveNodeLeftLeft = (*node)->right->left;
 
@@ -531,7 +541,8 @@ void simplifyMulByOne (node_t ** node)
 
             (*node)->right = saveNodeLeftLeft;
         }
-        if (((*node)->right->left != nullptr) && (compareFractionalNum((*node)->right->left->elem, 1) == 1))
+        if (((*node)->right->left != nullptr) &&
+            (compareFractionalNum((*node)->right->left->elem, 1) == 1))
         {
             node_t * saveNodeLeftRight = (*node)->right->right;
 
@@ -559,26 +570,35 @@ void simplifyAddWithZero (node_t ** node)
 
     if ((*node)->op_t == OP_ADD)
     {
-        if (((*node)->right != nullptr) && ((*node)->right->type == NUM_T) && (compareFractionalNum((*node)->right->elem, 0) == 1))
+        if (((*node)->right != nullptr) && ((*node)->right->type == NUM_T) &&
+            (compareFractionalNum((*node)->right->elem, 0) == 1))
         {
             deleteNode ((*node)->right);
             (*node)->right = nullptr;
             node_t * newNode = copyNode ((*node)->left);
             MY_ASSERT (newNode == nullptr, "The left node cannot be copied");
+            deleteTree ((*node)->left);
+            (*node)->left = nullptr;
+            deleteNode (*node);
             (*node) = newNode;
         }
-        if (((*node)->left != nullptr) && ((*node)->left->type == NUM_T) && (compareFractionalNum((*node)->left->elem, 0) == 1))
+        if (((*node)->left != nullptr) && ((*node)->left->type == NUM_T) &&
+            (compareFractionalNum((*node)->left->elem, 0) == 1))
         {
             deleteNode ((*node)->left);
             (*node)->left = nullptr;
             node_t * newNode = copyNode ((*node)->right);
             MY_ASSERT (newNode == nullptr, "The left node cannot be copied");
+            deleteTree ((*node)->right);
+            (*node)->right = nullptr;
+            deleteNode (*node);
             (*node) = newNode;
         }
     }
         if (((*node)->left != nullptr) && ((*node)->left->op_t == OP_ADD))
         {
-            if (((*node)->left->right != nullptr) && ((*node)->left->right->type == NUM_T) && (compareFractionalNum((*node)->left->right->elem, 0) == 1))
+            if (((*node)->left->right != nullptr) && ((*node)->left->right->type == NUM_T) &&
+                (compareFractionalNum((*node)->left->right->elem, 0) == 1))
             {
                 node_t * saveNodeLeftLeft = (*node)->left->left;
 
@@ -587,7 +607,8 @@ void simplifyAddWithZero (node_t ** node)
 
                 (*node)->left = saveNodeLeftLeft;
             }
-            if (((*node)->left->left != nullptr) && ((*node)->left->left->type == NUM_T) && (compareFractionalNum((*node)->left->left->elem, 0) == 1))
+            if (((*node)->left->left != nullptr) && ((*node)->left->left->type == NUM_T) &&
+                (compareFractionalNum((*node)->left->left->elem, 0) == 1))
             {
                 node_t * saveNodeLeftRight = (*node)->left->right;
 
@@ -599,7 +620,8 @@ void simplifyAddWithZero (node_t ** node)
         }
         else if (((*node)->right != nullptr) && ((*node)->right->op_t == OP_ADD))
         {
-            if (((*node)->right->right != nullptr) && ((*node)->right->right->type == NUM_T) && (compareFractionalNum((*node)->right->right->elem, 0) == 1))
+            if (((*node)->right->right != nullptr) && ((*node)->right->right->type == NUM_T) &&
+                (compareFractionalNum((*node)->right->right->elem, 0) == 1))
             {
                 node_t * saveNodeRightLeft = (*node)->right->left;
 
@@ -608,7 +630,8 @@ void simplifyAddWithZero (node_t ** node)
 
                 (*node)->right = saveNodeRightLeft;
             }
-            if (((*node)->right->left != nullptr) && ((*node)->right->left->type == NUM_T) && (compareFractionalNum((*node)->right->left->elem, 0) == 1))
+            if (((*node)->right->left != nullptr) && ((*node)->right->left->type == NUM_T) &&
+                (compareFractionalNum((*node)->right->left->elem, 0) == 1))
             {
                 node_t * saveNodeRightRight = (*node)->right->right;
 
@@ -635,8 +658,10 @@ void simplifyMulByZero (node_t * node)
     MY_ASSERT (node == nullptr, "There is no access to this node");
 
     if ((node->op_t == OP_MUL) &&
-        (((node->right != nullptr) && (node->right->type == NUM_T) && (compareFractionalNum(node->right->elem, 0) == 1)) ||
-        ((node->left != nullptr) && (node->left->type == NUM_T) && (compareFractionalNum(node->left->elem, 0) == 1))))
+        (((node->right != nullptr) && (node->right->type == NUM_T) &&
+            (compareFractionalNum(node->right->elem, 0) == 1)) ||
+        ((node->left != nullptr) && (node->left->type == NUM_T) &&
+            (compareFractionalNum(node->left->elem, 0) == 1))))
     {
         deleteNode (node->right);
         deleteNode (node->left);
@@ -652,8 +677,8 @@ void simplifyMulByZero (node_t * node)
         if ((node->left != nullptr) && (node->left->op_t == OP_MUL) &&
             (node->left->right->type == NUM_T) && (compareFractionalNum(node->left->right->elem, 0) == 1))
         {
-            deleteTree (node->left->right);
-            deleteTree (node->left);
+            deleteNode (node->left->right);
+            deleteNode (node->left);
 
             node_t * newNode = createNodeWithNum (0);
             node->left = newNode;
@@ -661,8 +686,8 @@ void simplifyMulByZero (node_t * node)
         else if ((node->right != nullptr) && (node->right->op_t == OP_MUL) &&
                 (node->right->right->type == NUM_T) && (compareFractionalNum(node->right->right->elem, 0) == 1))
         {
-            deleteTree (node->right->right);
-            deleteTree (node->right);
+            deleteNode (node->right->right);
+            deleteNode (node->right);
 
             node_t * newNode = createNodeWithNum (0);
             node->right = newNode;
@@ -914,14 +939,15 @@ void texStart (FILE * texfile)
 
 void startEquation (FILE * texfile, char var)
 {
+    dumpTexTree ("\nДавайте возьмём производную от этого чуда!\\\\\n");
     dumpTexTree ("\\begin{equation}\n");
-    dumpTexTree ("\nДавайте возьмём производную от этого чуда!\n");
+    printf (">>>>in startEquation: var = %c\n", var);
     dumpTexTree ("f(%c) = ", var);
 }
 
 void startDifEquation (FILE * texfile, char var)
 {
-    dumpTexTree ("\nЭто не должно быть страшно! Посмотрим...\n");
+    dumpTexTree ("\nЭто не должно быть страшно! Посмотрим...\\\\\n");
     dumpTexTree ("\\begin{equation}\n");
     dumpTexTree ("f(%c)^\\prime_%c = ", var, var);
 }
@@ -930,7 +956,8 @@ void startDifEquation (FILE * texfile, char var)
 void endEquation (FILE * texfile)
 {
     dumpTexTree ("\n\\end{equation}\n");
-    dumpTexTree ("Как говорится в старой пословице: \"Меньше знаешь -- крепче спишь\". Не задумывайтесь о том, что здесь произошло\n");
+    dumpTexTree ("Как говорится в старой пословице: \"Меньше знаешь -- крепче спишь\"."
+                    "Не задумывайтесь о том, что здесь произошло\\\\\n");
 }
 
 void texPrintNode (FILE * texfile, node_t * node)
@@ -991,7 +1018,8 @@ void texPrintNode (FILE * texfile, node_t * node)
         {
             dumpTexTree ("{");
         }
-        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
+        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) &&
+            (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
         {
             dumpTexTree ("(");
         }
@@ -1000,7 +1028,8 @@ void texPrintNode (FILE * texfile, node_t * node)
         {
             dumpTexTree ("}");
         }
-        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
+        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) &&
+            (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
         {
             dumpTexTree (")");
         }
@@ -1078,18 +1107,6 @@ int texFinish(FILE * texfile)
 
     return 0;
 }
-
-void selectingNameOfLatexFile (void)
-{
-    printf ("Please, enter the name of the LaTeX file file with the \".tex\" extension\n");
-    char * nameLatexFile = (char *) calloc (30, sizeof(char));
-    fgets (nameLatexFile, 29, stdin);
-
-    FILE * latexFile = fopen (nameLatexFile, "w");
-    MY_ASSERT (latexFile == nullptr, "There is no access to LaTeX file");
-
-    free (nameLatexFile);
-}
 //---------------------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------decompose by the Taylor formula-----------------------------------------------------
@@ -1099,21 +1116,21 @@ void decomposeByTaylor (node_t * node, FILE * texfile, char varInEquation)
     MY_ASSERT (node == nullptr, "There is no access to this node");
 
     node_t * copyHeadNode = copyNode (node);
+    graphicDumpTree (copyHeadNode);
 
     int degree = 0;
 
-    printf ("Specify the degree to which you want to decompose the function\n");
     degree = checkInput (&degree);
-    printf ("%d\n", degree);
 
     node_t ** arrDerivatives = (node_t **) calloc (degree+1, sizeof(node_t *));
     fillArrOfNodes (copyHeadNode, arrDerivatives, degree);
 
     resetVar (copyHeadNode);
+
     simplifyExpression (&copyHeadNode);
     arrDerivatives[degree] = copyHeadNode;
 
-    dumpTexTree ("Встречайте, разложение по формуле Тейлора в точке 0!\n");
+    dumpTexTree ("Встречайте, разложение по формуле Тейлора в точке 0!\\\\\n");
     startEquation (texfile, varInEquation);
 
     for (int i = degree, j = 0; i >= 0; i--, j++)
@@ -1126,11 +1143,16 @@ void decomposeByTaylor (node_t * node, FILE * texfile, char varInEquation)
         }
         else
         {
-            dumpTexTree ("}{%d!}\\cdot %c", j, varInEquation);
+            dumpTexTree ("}{%d!}\\cdot %c^{%d}", j, varInEquation, degree);
         }
     }
 
     endEquation (texfile);
+
+    for (int i = 0; i < degree; i++)
+    {
+        deleteTree (arrDerivatives[i]);
+    }
 
     deleteTree (copyHeadNode);
     free (arrDerivatives);
@@ -1189,35 +1211,50 @@ void resetVar (node_t * node)
     }
 }
 
-char saveVar (const node_t * node)
+char varName (const node_t * node)
 {
     MY_ASSERT (node == nullptr, "There is no access to this node");
+    var_t varStruct = findNameVar (node);
 
+    return varStruct.vName;
+}
+
+static var_t findNameVar (const node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+    var_t variable = {};
     if (node->type == VAR_T)
     {
-        return node->varName;
+        variable.vName = node->varName;
+        variable.isVar = 1;
+        return variable;
     }
 
     if (node->left != nullptr)
     {
-        return saveVar (node->left);
+        variable = findNameVar (node->left);
+        if (variable.isVar == 1)
+        {
+            return variable;
+        }
     }
     if (node->right != nullptr)
     {
-        return saveVar (node->right);
+        variable = findNameVar (node->right);
+        if (variable.isVar == 1)
+        {
+            return variable;
+        }
     }
-    return 0;
+    return variable;
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------build a graph using python------------------------------------------------------
 
-void buildGraph (node_t * node, FILE * texfile)
+void buildGraph (node_t * node, FILE * texfile, FILE * pyfile)
 {
-    FILE * pyfile = fopen("plot.py", "w\n");
-    setbuf (pyfile, nullptr);
-
     int leftX = 0;
     int rightX = 0;
 
@@ -1306,7 +1343,8 @@ void pyPrintNode (FILE * pyfile, node_t * node)
         {
             dumpPython ("(");
         }
-        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
+        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD ||
+            node->right->op_t == OP_SUB))
         {
             dumpPython ("(");
         }
@@ -1315,7 +1353,8 @@ void pyPrintNode (FILE * pyfile, node_t * node)
         {
             dumpPython (")");
         }
-        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD || node->right->op_t == OP_SUB))
+        if ((node->op_t == OP_MUL || node->op_t == OP_DIV) && (node->right->op_t == OP_ADD ||
+            node->right->op_t == OP_SUB))
         {
             dumpPython (")");
         }
@@ -1330,7 +1369,7 @@ void pyPrintOperation (FILE * pyfile, node_t * node)
 {
     MY_ASSERT (pyfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
-
+    printf (">>in pyPrintOperation\n");
     switch (node->op_t)
     {
         case OP_ADD:
@@ -1343,6 +1382,7 @@ void pyPrintOperation (FILE * pyfile, node_t * node)
             dumpPython (" * ");
             break;
         case OP_DIV:
+            dumpPython (" / ");
             break;
         case OP_DEG:
             dumpPython (" **( ");

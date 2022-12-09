@@ -8,6 +8,13 @@
 #include <string.h>
 #include "tree.h"
 
+struct forVarName {
+    char vName;
+    bool isVar;
+};
+
+typedef struct forVarName var_t;
+
 enum IS_LAST {
     NO_LAST = 0,
     LAST = 1
@@ -43,7 +50,7 @@ void deleteTree (node_t * node);
 //--------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------support functions---------------------------------------------------------
-FILE * openTexfile (void);
+FILE * openFile (char * nameFile);
 //---------------------------------------------------------------------------------------------------------------------------------
 
 //--------------------------------------------creating a tree after differentiation------------------------------------------------
@@ -72,7 +79,6 @@ void removeConstants (node_t ** node);
 //------------------------------------------------------dump to tex file------------------------------------------------------------
 
 void texStart (FILE * texfile);
-void selectingNameOfLatexFile (void);
 void texPrintNode (FILE * texfile, node_t * node);
 void texPrintOperation (FILE * texfile, node_t * node);
 void texPrintVar (FILE * texfile, node_t * node);
@@ -93,13 +99,13 @@ int checkInput (int * degreeOfNum);
 void startEquation (FILE * texfile, char var);
 void startDifEquation (FILE * texfile, char var);
 void endEquation (FILE * texfile);
-char saveVar (const node_t * node);
+char varName (const node_t * node);
 
 //--------------------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------build a graph using python------------------------------------------------------
 
-void buildGraph (node_t * node, FILE * texfile);
+void buildGraph (node_t * node, FILE * texfile, FILE * pyfile);
 void pyPrintNode (FILE * pyfile, node_t * node);
 void pyPrintOperation (FILE * pyfile, node_t * node);
 void pyPrintVar (FILE * pyfile, node_t * node);

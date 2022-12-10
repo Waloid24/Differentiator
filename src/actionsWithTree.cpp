@@ -52,7 +52,7 @@ node_t * createNodeWithVariable (char variableName)
 	return node;
 }
 
-node_t * createNodeWithFunction (const char * nameFunction)
+node_t * createNodeWithFunction (const char * nameFunction, node_t * leftDescendant)
 {
 	if ((myStrcmp (nameFunction, "sin") != 0) && (myStrcmp (nameFunction, "cos") != 0) &&
 		(myStrcmp (nameFunction, "tg") != 0) && (myStrcmp (nameFunction, "ctg") != 0) &&
@@ -67,6 +67,8 @@ node_t * createNodeWithFunction (const char * nameFunction)
 
 	node->type = FUNC_T;
 	node->nameFunc = nameFunction;
+	node->left = leftDescendant;
+	leftDescendant->parent = node;
 	return node;
 }
 

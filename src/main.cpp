@@ -2,8 +2,8 @@
 #include "processExpr.h"
 #include "createPyGraph.h"
 #include "dumpToTex.h"
-#include "createTreeAfterDif.h"
-#include "decomposeByTaylor.h"
+#include "diff.h"
+#include "taylor.h"
 #include "simplify.h"
 #include "actionsWithTree.h"
 
@@ -15,13 +15,16 @@ int main (int argc, char * argv[])
     FILE * pyfile = openFile (argv[2]);
 
     node_t * firstNode = getGrammar ();
-    simplifyExpression (&firstNode);
+    simplify (&firstNode);
+
+    printf (">> in main\n");
+    graphicDumpTree (firstNode);
 
     char var = varName (firstNode);
 
-    node_t * difNode = getGrammarForDif (firstNode);
+    node_t * difNode = diff (firstNode);
 
-    simplifyExpression (&difNode);
+    simplify (&difNode);
 
     texStart (texfile);
     startEquation (texfile, var);
@@ -33,6 +36,8 @@ int main (int argc, char * argv[])
     endEquation (texfile);
 
     decomposeByTaylor (firstNode, texfile, var);
+
+    printf ("in main after Teaylor\n");
 
     buildGraph (firstNode, texfile, pyfile);
 

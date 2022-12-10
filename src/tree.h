@@ -29,12 +29,6 @@ enum operationType {
 
 typedef double elem_t;
 
-// typedef struct
-// {
-//     myStruct* structPtr;
-//
-// } myStruct;
-
 struct nodeTree {
     struct nodeTree * parent;
     elem_t elem;

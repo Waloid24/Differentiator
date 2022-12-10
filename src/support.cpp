@@ -64,7 +64,6 @@ void dotFileHeaderForTree (const node_t * node, const char * nameDotFileTree)
 	dumplineTree ("  ranksep = 1.5;\n\n");
 	dumplineTree ("  splines = ortho;\n\n");
 
-	// dumplineTree ("  edge[minlen = 3, penwidth = 3];\n");
     dumplineTree ("  node[shape = record];\n\n");
 
 	writeNodeToDotFile (node, graphicDump);

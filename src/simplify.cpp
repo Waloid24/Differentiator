@@ -1,6 +1,34 @@
 #include "simplify.h"
 
-void simplifyExpression (node_t ** node)
+static void simplifyDegOrDivToOne (node_t ** node);
+static void simplifyMulByZero (node_t * node);
+static void simplifyMulByOne (node_t ** node);
+static void simplifyAddWithZero (node_t ** node);
+static int compareFractionalNum (double firstNum, double secondNum);
+static void removeConstants (node_t ** node);
+
+#define NODE_OP(OP)                                                             \
+    newNode->elem = (*node)->right->elem OP (*node)->left->elem;                \
+    deleteNode ((*node)->right);                                                \
+    deleteNode ((*node)->left);                                                 \
+    deleteNode ((*node));                                                       \
+    (*node) = newNode
+
+#define LEFT_NODE_OP(OP)                                                        \
+    newNode->elem = (*node)->left->left->elem OP (*node)->left->right->elem;    \
+    deleteNode ((*node)->left->left);                                           \
+    deleteNode ((*node)->left->right);                                          \
+    deleteNode ((*node)->left);                                                 \
+    (*node)->left = newNode
+
+#define RIGHT_NODE_OP(OP)                                                       \
+    newNode->elem = (*node)->right->left->elem OP (*node)->right->right->elem;  \
+    deleteNode ((*node)->right->left);                                          \
+    deleteNode ((*node)->right->right);                                         \
+    deleteNode ((*node)->right);                                                \
+    (*node)->right = newNode
+
+void simplify (node_t ** node)
 {
     for (int i = 0; i < 3; i++)
     {
@@ -21,35 +49,19 @@ void removeConstants (node_t ** node)
         node_t * newNode = createNodeWithNum (1);
         if ((*node)->op_t == OP_ADD)
         {
-            newNode->elem = (*node)->right->elem + (*node)->left->elem;
-            deleteNode ((*node)->right);
-            deleteNode ((*node)->left);
-            deleteNode ((*node));
-            (*node) = newNode;
+            NODE_OP (+);
         }
         else if ((*node)->op_t == OP_SUB)
         {
-            newNode->elem = (*node)->right->elem + (*node)->left->elem;
-            deleteNode ((*node)->right);
-            deleteNode ((*node)->left);
-            deleteNode ((*node));
-            (*node) = newNode;
+            NODE_OP (-);
         }
         else if ((*node)->op_t == OP_MUL)
         {
-            newNode->elem = (*node)->right->elem * (*node)->left->elem;
-            deleteNode ((*node)->right);
-            deleteNode ((*node)->left);
-            deleteNode ((*node));
-            (*node) = newNode;
+            NODE_OP (*);
         }
         else if ((*node)->op_t == OP_DIV)
         {
-            newNode->elem = (*node)->right->elem / (*node)->left->elem;
-            deleteNode ((*node)->right);
-            deleteNode ((*node)->left);
-            deleteNode ((*node));
-            (*node) = newNode;
+            NODE_OP (/);
         }
         else if ((*node)->op_t == OP_DEG)
         {
@@ -70,35 +82,19 @@ void removeConstants (node_t ** node)
         node_t * newNode = createNodeWithNum (1);
         if ((*node)->left->op_t == OP_ADD)
         {
-            newNode->elem = (*node)->left->left->elem + (*node)->left->right->elem;
-            deleteNode ((*node)->left->left);
-            deleteNode ((*node)->left->right);
-            deleteNode ((*node)->left);
-            (*node)->left = newNode;
+            LEFT_NODE_OP (+);
         }
         else if ((*node)->left->op_t == OP_SUB)
         {
-            newNode->elem = (*node)->left->left->elem - (*node)->left->right->elem;
-            deleteNode ((*node)->left->left);
-            deleteNode ((*node)->left->right);
-            deleteNode ((*node)->left);
-            (*node)->left = newNode;
+            LEFT_NODE_OP (-);
         }
         else if ((*node)->left->op_t == OP_MUL)
         {
-            newNode->elem = (*node)->left->left->elem * (*node)->left->right->elem;
-            deleteNode ((*node)->left->left);
-            deleteNode ((*node)->left->right);
-            deleteNode ((*node)->left);
-            (*node)->left = newNode;
+            LEFT_NODE_OP (*);
         }
         else if ((*node)->left->op_t == OP_DIV)
         {
-            newNode->elem = (*node)->left->left->elem / (*node)->left->right->elem;
-            deleteNode ((*node)->left->left);
-            deleteNode ((*node)->left->right);
-            deleteNode ((*node)->left);
-            (*node)->left = newNode;
+            LEFT_NODE_OP (/);
         }
         else if ((*node)->left->op_t == OP_DEG)
         {
@@ -119,38 +115,21 @@ void removeConstants (node_t ** node)
     {
         node_t * newNode = createNodeWithNum (1);
 
-        // COPYPASTE!!!!!!
         if ((*node)->right->op_t == OP_ADD)
         {
-            newNode->elem = (*node)->right->left->elem + (*node)->right->right->elem;
-            deleteNode ((*node)->right->left);
-            deleteNode ((*node)->right->right);
-            deleteNode ((*node)->right);
-            (*node)->right = newNode;
+            RIGHT_NODE_OP (+);
         }
         else if ((*node)->right->op_t == OP_SUB)
         {
-            newNode->elem = (*node)->right->left->elem - (*node)->right->right->elem;
-            deleteNode ((*node)->right->left);
-            deleteNode ((*node)->right->right);
-            deleteNode ((*node)->right);
-            (*node)->right = newNode;
+            RIGHT_NODE_OP (-);
         }
         else if ((*node)->right->op_t == OP_MUL)
         {
-            newNode->elem = (*node)->right->left->elem * (*node)->right->right->elem;
-            deleteNode ((*node)->right->left);
-            deleteNode ((*node)->right->right);
-            deleteNode ((*node)->right);
-            (*node)->right = newNode;
+            RIGHT_NODE_OP (*);
         }
         else if ((*node)->right->op_t == OP_DIV)
         {
-            newNode->elem = (*node)->right->left->elem / (*node)->right->right->elem;
-            deleteNode ((*node)->right->left);
-            deleteNode ((*node)->right->right);
-            deleteNode ((*node)->right);
-            (*node)->right = newNode;
+            RIGHT_NODE_OP (/);
         }
         else if ((*node)->right->op_t == OP_DEG)
         {

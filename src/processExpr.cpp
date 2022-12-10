@@ -126,12 +126,8 @@ node_t * getNumber (char ** str)
         }
         else
         {
-            node_t * function = createNodeWithFunction (buf);
             node_t * followingExpression = getBracket (str);
-            function->right = nullptr;
-            function->left = followingExpression;
-            followingExpression->parent = function;
-
+            node_t * function = createNodeWithFunction (buf, followingExpression);
             return (function);
         }
         free (buf);

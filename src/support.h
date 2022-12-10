@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "tree.h"
-#include "my_assert.h"
+#include "MY_ASSERT.h"
 
 int checkInput (int * degreeOfNum);
 void graphicDumpTree (const node_t * node);

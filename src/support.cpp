@@ -1,3 +1,4 @@
+#include "tree.h"
 #include "support.h"
 
 #define dumplineTree(text, ...)\
@@ -12,6 +13,9 @@ static void createHtmlFileTree(const char * nameFileDump, unsigned int * timesCr
 
 static unsigned int	NUMBER_GRAPHICAL_TREE_DUMPS = 0;
 //----------------------------------------------------------------------------------------------------------------
+
+static var_t findNameVar (const node_t * node);
+
 
 int checkInput (int * degreeOfNum)
 {
@@ -178,3 +182,41 @@ int myStrcmp (const char * string1, const char * string2)
 	return (tolower(string1[i]) - tolower(string2[j]));
 }
 //---------------------------------------------------------------------------------------------------------------------------------
+
+char varName (const node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+    var_t varStruct = findNameVar (node);
+
+    return varStruct.vName;
+}
+
+static var_t findNameVar (const node_t * node)
+{
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+    var_t variable = {};
+    if (node->type == VAR_T)
+    {
+        variable.vName = node->varName;
+        variable.isVar = 1;
+        return variable;
+    }
+
+    if (node->left != nullptr)
+    {
+        variable = findNameVar (node->left);
+        if (variable.isVar == 1)
+        {
+            return variable;
+        }
+    }
+    if (node->right != nullptr)
+    {
+        variable = findNameVar (node->right);
+        if (variable.isVar == 1)
+        {
+            return variable;
+        }
+    }
+    return variable;
+}

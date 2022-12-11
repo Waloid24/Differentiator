@@ -1,28 +1,22 @@
 #include "taylor.h"
 
-static var_t findNameVar (const node_t * node);
+static node_t ** taylor (node_t * node, int degree);
+static void fillArrOfNodes (node_t * node, node_t ** arrNodes, int n);
+static void resetVar (node_t * node);
 
-void decomposeByTaylor (node_t * node, FILE * texfile, char varInEquation)
+void taylorInterface (node_t * node, FILE * texfile, char varInEquation)
 {
     MY_ASSERT (node == nullptr, "There is no access to this node");
     node_t * copyHeadNode = copyNode (node);
-    graphicDumpTree (copyHeadNode);
 
     int degree = 0;
 
     printf ("To what extent decompose?\n");
     degree = checkInput (&degree);
 
-    node_t ** arrDerivatives = (node_t **) calloc (degree+1, sizeof(node_t *));
+    node_t ** arrDerivatives = taylor (copyHeadNode, degree);
 
-    fillArrOfNodes (copyHeadNode, arrDerivatives, degree);
-
-    resetVar (copyHeadNode);
-
-    simplify (&copyHeadNode);
-    arrDerivatives[degree] = copyHeadNode;
-
-    dumpTexTree ("Встречайте, разложение по формуле Тейлора в точке 0!\\\\\n");
+    dumpTexTree ("Decomposition by the Maclaurin formula!\\\\\n");
     startEquation (texfile, varInEquation);
 
     for (int i = degree, j = 0; i >= 0; i--, j++)
@@ -50,7 +44,23 @@ void decomposeByTaylor (node_t * node, FILE * texfile, char varInEquation)
     free (arrDerivatives);
 }
 
-void fillArrOfNodes (node_t * node, node_t ** arrNodes, int n)
+static node_t ** taylor (node_t * node, int degree)
+{
+    MY_ASSERT (node == nullptr, "There is no access to this node");
+
+    node_t ** arrDerivatives = (node_t **) calloc (degree+1, sizeof(node_t *));
+
+    fillArrOfNodes (node, arrDerivatives, degree);
+
+    resetVar (node);
+
+    simplify (&node);
+    arrDerivatives[degree] = node;
+
+    return arrDerivatives;
+}
+
+static void fillArrOfNodes (node_t * node, node_t ** arrNodes, int n)
 {
     if (n > 0)
     {
@@ -65,7 +75,7 @@ void fillArrOfNodes (node_t * node, node_t ** arrNodes, int n)
     }
 }
 
-void resetVar (node_t * node)
+static void resetVar (node_t * node)
 {
     MY_ASSERT (node == nullptr, "There is no access to this node");
 
@@ -86,40 +96,4 @@ void resetVar (node_t * node)
     }
 }
 
-char varName (const node_t * node)
-{
-    MY_ASSERT (node == nullptr, "There is no access to this node");
-    var_t varStruct = findNameVar (node);
 
-    return varStruct.vName;
-}
-
-static var_t findNameVar (const node_t * node)
-{
-    MY_ASSERT (node == nullptr, "There is no access to this node");
-    var_t variable = {};
-    if (node->type == VAR_T)
-    {
-        variable.vName = node->varName;
-        variable.isVar = 1;
-        return variable;
-    }
-
-    if (node->left != nullptr)
-    {
-        variable = findNameVar (node->left);
-        if (variable.isVar == 1)
-        {
-            return variable;
-        }
-    }
-    if (node->right != nullptr)
-    {
-        variable = findNameVar (node->right);
-        if (variable.isVar == 1)
-        {
-            return variable;
-        }
-    }
-    return variable;
-}

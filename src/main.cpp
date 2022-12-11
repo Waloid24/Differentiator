@@ -5,11 +5,9 @@
 #include "diff.h"
 #include "taylor.h"
 #include "simplify.h"
-#include "actionsWithTree.h"
 
 int main (int argc, char * argv[])
 {
-    printf ("argc = %d\n", argc);
     MY_ASSERT (argc != 3, "Too few arguments on the command line");
     FILE * texfile = openFile (argv[1]);
     FILE * pyfile = openFile (argv[2]);
@@ -17,7 +15,6 @@ int main (int argc, char * argv[])
     node_t * firstNode = getGrammar ();
     simplify (&firstNode);
 
-    printf (">> in main\n");
     graphicDumpTree (firstNode);
 
     char var = varName (firstNode);
@@ -35,9 +32,7 @@ int main (int argc, char * argv[])
     texPrintNode (texfile, difNode);
     endEquation (texfile);
 
-    decomposeByTaylor (firstNode, texfile, var);
-
-    printf ("in main after Teaylor\n");
+    taylorInterface (firstNode, texfile, var);
 
     buildGraph (firstNode, texfile, pyfile);
 

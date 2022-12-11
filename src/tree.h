@@ -1,6 +1,8 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include <stdlib.h>
+
 enum op_t {
     ADD = 1,
     SUB = 2,
@@ -42,5 +44,15 @@ struct nodeTree {
 };
 
 typedef struct nodeTree node_t;
+
+node_t * createNodeWithNum (elem_t num);
+node_t * createNodeWithOperation (enum operationType operation, node_t * valLeftNode, node_t * valRightNode);
+node_t * createNodeWithVariable (char nameOfVar);
+node_t * createNodeWithFunction (const char * nameFunction, node_t * leftDescendant);
+
+void insert_node (node_t * node, node_t * root);
+node_t * copyNode (node_t * nodeForCopy);
+void deleteNode (node_t * node);
+void deleteTree (node_t * node);
 
 #endif

@@ -1,2 +1,2 @@
 all:
-	g++ main.cpp actionsWithTree.cpp createPyGraph.cpp dumpToTex.cpp createTreeAfterDif.cpp decomposeByTaylor.cpp simplify.cpp processExpr.cpp support.cpp -g
+	g++ main.cpp tree.cpp createPyGraph.cpp dumpToTex.cpp diff.cpp taylor.cpp simplify.cpp processExpr.cpp support.cpp -g

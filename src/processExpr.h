@@ -3,9 +3,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "tree.h"
 #include "support.h"
-#include "actionsWithTree.h"
+#include "tree.h"
 
 void removeSpaces (char * dest, const char * source);
 node_t * getGrammar (void);

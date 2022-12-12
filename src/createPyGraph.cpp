@@ -3,6 +3,15 @@
 #define dumpPython(text, ...)\
     fprintf (pyfile, text, ##__VA_ARGS__)
 
+static void pyPrintNode (FILE * pyfile, node_t * node);
+static void pyPrintOperation (FILE * pyfile, node_t * node);
+static void pyPrintVar (FILE * pyfile, node_t * node);
+static void pyPrintNum (FILE * pyfile, node_t * node);
+static void pyPrintFunc (FILE * pyfile, node_t * node);
+static void pyPrintConst (FILE * pyfile, node_t * node);
+
+//--------------------------------------------------------------------------------------------
+
 void buildGraph (node_t * node, FILE * texfile, FILE * pyfile)
 {
     int leftX = 0;
@@ -36,7 +45,7 @@ void buildGraph (node_t * node, FILE * texfile, FILE * pyfile)
     dumpTexTree ("\\end{figure}\n");
 }
 
-void pyPrintNode (FILE * pyfile, node_t * node)
+static void pyPrintNode (FILE * pyfile, node_t * node)
 {
     MY_ASSERT (pyfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
@@ -116,7 +125,7 @@ void pyPrintNode (FILE * pyfile, node_t * node)
     }
 }
 
-void pyPrintOperation (FILE * pyfile, node_t * node)
+static void pyPrintOperation (FILE * pyfile, node_t * node)
 {
     MY_ASSERT (pyfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
@@ -143,7 +152,7 @@ void pyPrintOperation (FILE * pyfile, node_t * node)
     }
 }
 
-void pyPrintVar (FILE * pyfile, node_t * node)
+static void pyPrintVar (FILE * pyfile, node_t * node)
 {
     MY_ASSERT (pyfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
@@ -151,7 +160,7 @@ void pyPrintVar (FILE * pyfile, node_t * node)
     dumpPython ("%c", node->varName);
 }
 
-void pyPrintNum (FILE * pyfile, node_t * node)
+static void pyPrintNum (FILE * pyfile, node_t * node)
 {
     MY_ASSERT (pyfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
@@ -159,7 +168,7 @@ void pyPrintNum (FILE * pyfile, node_t * node)
     dumpPython ("%.2lf", node->elem);
 }
 
-void pyPrintFunc (FILE * pyfile, node_t * node)
+static void pyPrintFunc (FILE * pyfile, node_t * node)
 {
     MY_ASSERT (pyfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
@@ -179,7 +188,7 @@ void pyPrintFunc (FILE * pyfile, node_t * node)
     }
 }
 
-void pyPrintConst (FILE * pyfile, node_t * node)
+static void pyPrintConst (FILE * pyfile, node_t * node)
 {
     MY_ASSERT (pyfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");

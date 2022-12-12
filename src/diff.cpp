@@ -33,6 +33,8 @@ static node_t * diffFunc (node_t * node);
 #define SUB(left,right)                             \
     createNodeWithOperation (OP_SUB, left, right)
 
+//---------------------------------------------------------------------------------------------------
+
 node_t * diff (node_t * node)
 {
     MY_ASSERT (node == nullptr, "There is no access to the node");

@@ -2,8 +2,14 @@
 
 static char * readExpression (void);
 static char * readString (char ** str);
+static void removeSpaces (char * dest, const char * source);
+static node_t * getExpression (char ** str);
+static node_t * getT (char ** str);
+static node_t * getDegree (char ** str);
+static node_t * getBracket (char ** str);
+static node_t * getNumber (char ** str);
 
-void removeSpaces (char * dest, const char * source)
+static void removeSpaces (char * dest, const char * source)
 {
     while (*source != '\0')
     {
@@ -30,7 +36,7 @@ node_t * getGrammar (void)
     return firstNode;
 }
 
-node_t * getExpression (char ** str)
+static node_t * getExpression (char ** str)
 {
     node_t * leftNode = getT (str);
     while (1)
@@ -58,7 +64,7 @@ node_t * getExpression (char ** str)
     return leftNode;
 }
 
-node_t * getT (char ** str)
+static node_t * getT (char ** str)
 {
     node_t * leftNode = getDegree (str);
     while (**str == '*' || **str == '/')
@@ -79,7 +85,7 @@ node_t * getT (char ** str)
     return leftNode;
 }
 
-node_t * getDegree (char ** str)
+static node_t * getDegree (char ** str)
 {
     node_t * leftNode = getBracket(str);
     while (**str == '^')
@@ -93,7 +99,7 @@ node_t * getDegree (char ** str)
     return leftNode;
 }
 
-node_t * getBracket (char ** str)
+static node_t * getBracket (char ** str)
 {
     node_t * val = nullptr;
     if (**str == '(')
@@ -109,7 +115,7 @@ node_t * getBracket (char ** str)
     return val;
 }
 
-node_t * getNumber (char ** str)
+static node_t * getNumber (char ** str)
 {
     if (isalpha(**str))
     {

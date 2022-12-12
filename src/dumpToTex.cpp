@@ -49,6 +49,14 @@ static const char * TEX_TITLE_PAGE =
     "}"
 "\\end{titlepage}\n\n";
 
+static void texPrintOperation (FILE * texfile, node_t * node); 
+static void texPrintVar (FILE * texfile, node_t * node);
+static void texPrintNum (FILE * texfile, node_t * node);
+static void texPrintFunc (FILE * texfile, node_t * node);
+static void texPrintConst (FILE * texfile, node_t * node);
+
+//--------------------------------------------------------------------------------------------------------
+
 void texStart (FILE * texfile)
 {
     dumpTexTree (TEX_OPTIONS);
@@ -157,7 +165,7 @@ void texPrintNode (FILE * texfile, node_t * node)
     }
 }
 
-void texPrintOperation (FILE * texfile, node_t * node)
+static void texPrintOperation (FILE * texfile, node_t * node)
 {
     MY_ASSERT (texfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
@@ -184,7 +192,7 @@ void texPrintOperation (FILE * texfile, node_t * node)
     }
 }
 
-void texPrintVar (FILE * texfile, node_t * node)
+static void texPrintVar (FILE * texfile, node_t * node)
 {
     MY_ASSERT (texfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
@@ -192,7 +200,7 @@ void texPrintVar (FILE * texfile, node_t * node)
     dumpTexTree ("%c", node->varName);
 }
 
-void texPrintNum (FILE * texfile, node_t * node)
+static void texPrintNum (FILE * texfile, node_t * node)
 {
     MY_ASSERT (texfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
@@ -200,7 +208,7 @@ void texPrintNum (FILE * texfile, node_t * node)
     dumpTexTree ("%.2lf", node->elem);
 }
 
-void texPrintFunc (FILE * texfile, node_t * node)
+static void texPrintFunc (FILE * texfile, node_t * node)
 {
     MY_ASSERT (texfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");
@@ -208,7 +216,7 @@ void texPrintFunc (FILE * texfile, node_t * node)
     dumpTexTree ("%s", node->nameFunc);
 }
 
-void texPrintConst (FILE * texfile, node_t * node)
+static void texPrintConst (FILE * texfile, node_t * node)
 {
     MY_ASSERT (texfile == nullptr, "There is no access to this file");
     MY_ASSERT (node == nullptr, "There is no access to this node");

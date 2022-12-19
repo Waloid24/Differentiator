@@ -1,0 +1,38 @@
+jmp begin:; ok
+
+fact:;
+    push 1; ok
+    push rbx; ok 
+    jbe e_fact:; ok
+
+    pop rcx; ok
+    pop rcx; ok
+    push rax; ok
+    push rbx; ok
+    push -1; ok
+    add; ok
+    pop rbx; ok
+    push rbx; ok
+    mul; ok
+    pop rax; ok
+    call fact:; ok
+    jmp end:;  ok
+
+
+    e_fact:; ok
+    pop rcx; ok
+    pop rcx; ok
+    end:; ok
+ret; ok
+
+
+begin:; ok
+in; ok
+pop rax; ok
+push rax; ok
+pop rbx; ok
+call fact:; ok
+
+push rax; ok
+out; ok
+hlt; ok

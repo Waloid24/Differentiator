@@ -1,43 +1,22 @@
-#include "tree.h"
-#include "processExpr.h"
-#include "createPyGraph.h"
-#include "dumpToTex.h"
-#include "diff.h"
-#include "taylor.h"
-#include "simplify.h"
+#include <stdio.h>
+#include "readCode.h"
+#include "cpu.h"
+#include "asm.h"
+#include "MY_ASSERT.h"
 
-int main (int argc, char * argv[])
+const int NUM_TAGS = 20;
+
+int main (int argc, char * argv[]) //secons argument is code file
 {
-    MY_ASSERT (argc != 3, "Too few arguments on the command line");
-    FILE * texfile = openFile (argv[1]);
-    FILE * pyfile = openFile (argv[2]);
+    MY_ASSERT (argc != 3, "Too few command line arguments!");
+    code_t codeInfo = {};
 
-    node_t * firstNode = getGrammar ();
-    simplify (&firstNode);
+    codeInfo = readCode (argv[1]);
 
-    graphicDumpTree (firstNode);
+    MY_ASSERT (codeInfo.nStrs == 0, "There are no lines of code in your program");
 
-    char var = varName (firstNode);
+    createBinFile (codeInfo.arrStrs, &codeInfo, argv[2], NUM_TAGS);
 
-    node_t * difNode = diff (firstNode);
-
-    simplify (&difNode);
-
-    texStart (texfile);
-    startEquation (texfile, var);
-    texPrintNode (texfile, firstNode);
-    endEquation (texfile);
-
-    startDifEquation (texfile, var);
-    texPrintNode (texfile, difNode);
-    endEquation (texfile);
-
-    taylorInterface (firstNode, texfile, var);
-
-    buildGraph (firstNode, texfile, pyfile);
-
-    texFinish (texfile);
-
-    deleteTree (firstNode);
-    deleteTree (difNode);
+    getCode (argv[2], codeInfo, NUM_TAGS);
 }
+

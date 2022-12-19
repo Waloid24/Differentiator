@@ -1,0 +1,84 @@
+jmp begin:;
+
+without_a:; эта часть работает
+    push rbx;
+    push rcx;
+    push -1;
+    mul;
+    div;
+    out;
+hlt;
+              
+discriminant:;
+    push 4;
+    push rax;
+    push rcx;
+    mul;
+    mul;
+
+    push rbx;
+    push rbx;
+    mul;
+
+    sub;
+    push 0;
+    ja error:;
+    pop;
+    sqrt; добавить!
+    pop[1]; дискриминант
+ret;
+
+error:;
+    hlt;
+
+begin:;
+    in;
+    pop rax;
+    in;
+    pop rbx;
+    in;
+    pop rcx;
+
+    push rax;
+    push 0;
+    je without_a:;
+
+    call discriminant:;
+
+    push 2;
+    push rax;
+    mul;
+    pop [2]; это знаменатель
+
+    push [1]; ok
+    push -1;
+    push rbx;
+    mul; ok
+    sub;
+    pop [3]; это числитель первого корня
+
+    push -1;
+    push rbx;
+    mul;
+    push [1];
+    add;
+    pop [4]; это числитель второго корня
+
+    push [2];
+    push [2]; проверка ok
+    out; проверка ok
+    push [3];
+    push [3];
+    out;
+    div;
+    pop [5]; первый корень
+
+    push [2];
+    push [4];
+    div;
+    pop [6]; второй корень
+
+    push [5];
+    out;
+    push [6];
+    out;

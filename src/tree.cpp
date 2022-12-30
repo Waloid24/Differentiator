@@ -1,5 +1,6 @@
 #include "tree.h"
-#include "support.h"
+#include "graphDumpTree.h"
+#include "myStrcmp.h"
 
 //-------------------------------------------------------------building a tree-------------------------------------------------------
 

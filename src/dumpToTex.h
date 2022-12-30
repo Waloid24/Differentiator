@@ -4,7 +4,8 @@
 #define dumpTexTree(text, ...)\
     fprintf (texfile, text, ##__VA_ARGS__)
 
-#include "support.h"
+#include <stdio.h>
+#include "MY_ASSERT.h"
 #include "tree.h"
 
 void texStart (FILE * texfile);

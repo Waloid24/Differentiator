@@ -9,6 +9,7 @@ static void pyPrintVar (FILE * pyfile, node_t * node);
 static void pyPrintNum (FILE * pyfile, node_t * node);
 static void pyPrintFunc (FILE * pyfile, node_t * node);
 static void pyPrintConst (FILE * pyfile, node_t * node);
+static int checkInput (int * degreeOfNum);
 
 //--------------------------------------------------------------------------------------------
 
@@ -194,4 +195,20 @@ static void pyPrintConst (FILE * pyfile, node_t * node)
     MY_ASSERT (node == nullptr, "There is no access to this node");
 
     dumpPython ("%c", node->varName);
+}
+
+static int checkInput (int * degreeOfNum)
+{
+    MY_ASSERT (degreeOfNum == nullptr, "There is no access to this number");
+
+    int enterSymbols = scanf (" %d", degreeOfNum);
+    while (getchar() != '\n');
+
+    if (enterSymbols == 0)
+    {
+        printf ("Please, enter a positive number\n");
+        return checkInput (degreeOfNum);
+    }
+
+    return *degreeOfNum;
 }

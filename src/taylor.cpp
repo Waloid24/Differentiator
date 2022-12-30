@@ -1,56 +1,16 @@
 #include "taylor.h"
 
-static node_t ** taylor (node_t * node, int degree);
-static void fillArrOfNodes (node_t * node, node_t ** arrNodes, int n);
+static void difForTaylor (node_t * node, node_t ** arrNodes, int n);
 static void resetVar (node_t * node);
+static int checkInput (int * degreeOfNum);
 
-void taylorInterface (node_t * node, FILE * texfile, char varInEquation)
-{
-    MY_ASSERT (node == nullptr, "There is no access to this node");
-    node_t * copyHeadNode = copyNode (node);
-
-    int degree = 0;
-
-    printf ("To what extent decompose?\n");
-    degree = checkInput (&degree);
-
-    node_t ** arrDerivatives = taylor (copyHeadNode, degree);
-
-    dumpTexTree ("Decomposition by the Maclaurin formula!\\\\\n");
-    startEquation (texfile, varInEquation);
-
-    for (int i = degree, j = 0; i >= 0; i--, j++)
-    {
-        dumpTexTree ("\\frac{");
-        texPrintNode (texfile, arrDerivatives[i]);
-        if (i != 0)
-        {
-            dumpTexTree ("}{%d!}\\cdot %c^{%d} + ", j, varInEquation, j);
-        }
-        else
-        {
-            dumpTexTree ("}{%d!}\\cdot %c^{%d}", j, varInEquation, degree);
-        }
-    }
-
-    endEquation (texfile);
-
-    for (int i = 0; i < degree; i++)
-    {
-        deleteTree (arrDerivatives[i]);
-    }
-
-    deleteTree (copyHeadNode);
-    free (arrDerivatives);
-}
-
-static node_t ** taylor (node_t * node, int degree)
+node_t ** taylor (node_t * node, int degree)
 {
     MY_ASSERT (node == nullptr, "There is no access to this node");
 
     node_t ** arrDerivatives = (node_t **) calloc (degree+1, sizeof(node_t *));
 
-    fillArrOfNodes (node, arrDerivatives, degree);
+    difForTaylor (node, arrDerivatives, degree);
 
     resetVar (node);
 
@@ -60,14 +20,14 @@ static node_t ** taylor (node_t * node, int degree)
     return arrDerivatives;
 }
 
-static void fillArrOfNodes (node_t * node, node_t ** arrNodes, int n)
+static void difForTaylor (node_t * node, node_t ** arrNodes, int n)
 {
     if (n > 0)
     {
         node = diff (node);
         simplify (&node);
 
-        fillArrOfNodes (node, arrNodes, n-1);
+        difForTaylor (node, arrNodes, n-1);
 
         resetVar (node);
         simplify (&node);
@@ -96,4 +56,60 @@ static void resetVar (node_t * node)
     }
 }
 
+void dumpTaylor (FILE * texfile, char varInEquation, node_t ** arrDerivatives, int degree)
+{
+    dumpTexTree ("Decomposition by the Maclaurin formula!\\\\\n");
+    startEquation (texfile, varInEquation);
 
+    for (int i = degree, j = 0; i >= 0; i--, j++)
+    {
+        dumpTexTree ("\\frac{");
+        texPrintNode (texfile, arrDerivatives[i]);
+        if (i != 0)
+        {
+            dumpTexTree ("}{%d!}\\cdot %c^{%d} + ", j, varInEquation, j);
+        }
+        else
+        {
+            dumpTexTree ("}{%d!}\\cdot %c^{%d}", j, varInEquation, degree);
+        }
+    }
+
+    endEquation (texfile);
+}
+
+void clearTaylorMemory (node_t ** arrDerivatives, int degree, node_t * headNode)
+{
+    for (int i = 0; i < degree; i++)
+    {
+        deleteTree (arrDerivatives[i]);
+    }
+
+    deleteTree (headNode);
+    free (arrDerivatives);
+}
+
+int decAccuracy (void)
+{
+    int degree = 0;
+    printf ("To what extent decompose?\n");
+    degree = checkInput (&degree);
+    
+    return degree;
+}
+
+static int checkInput (int * degreeOfNum)
+{
+    MY_ASSERT (degreeOfNum == nullptr, "There is no access to this number");
+
+    int enterSymbols = scanf (" %d", degreeOfNum);
+    while (getchar() != '\n');
+
+    if (enterSymbols == 0 || *degreeOfNum < 0)
+    {
+        printf ("Please, enter a positive number\n");
+        return checkInput (degreeOfNum);
+    }
+
+    return *degreeOfNum;
+}

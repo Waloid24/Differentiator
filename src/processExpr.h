@@ -3,7 +3,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "support.h"
+#include <stdio.h>
+#include <ctype.h>
+#include "MY_ASSERT.h"
 #include "tree.h"
 
 node_t * getGrammar (void);

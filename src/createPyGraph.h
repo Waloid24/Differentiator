@@ -3,7 +3,7 @@
 
 #include "dumpToTex.h"
 #include "tree.h"
-#include "support.h"
+#include "myStrcmp.h"
 
 void buildGraph (node_t * node, FILE * texfile, FILE * pyfile);
 
